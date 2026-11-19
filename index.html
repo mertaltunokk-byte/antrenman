@@ -126,6 +126,11 @@ footer.player{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--
 .calgrid button.today{border:2px solid var(--navy2)}
 .calgrid button.done{background:var(--ok);color:#fff;border-color:var(--ok)}
 .calgrid button.prep{border:2px dashed var(--ok)}
+.calgrid button.rw{background:#fff4d6;border-color:#f2a900;color:#6b4e00}
+.calgrid button.rw::after{content:"🍽";font-size:13px;line-height:1}
+.calgrid button.rwp::after{content:"🍽";font-size:13px;line-height:1;opacity:.35}
+.odul{margin:10px 0 0;padding:10px 12px;border-radius:12px;background:#fff4d6;color:#6b4e00;font-size:14px}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) .calgrid button.rw,:root:not([data-theme="light"]) .odul{background:#3a3016;color:#f5d27a}}
 .start:disabled{background:var(--ok);opacity:.8;cursor:default}
 .calgrid button.done::after{content:"✓";font-size:14px;line-height:1}
 .calgrid button.sel{outline:3px solid var(--red);outline-offset:1px}
@@ -189,6 +194,7 @@ button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
   <section class="card sun" id="sunCard" hidden>
     <h2>Bugün Pazar: dinlenme günü 🌿</h2>
     <p class="sub">Zincir kırılmaz. İstersen 30–45 dk rahat yürüyüş yap, haftanın yemeklerini planla. Aşağıda yarının (Pazartesi) antrenmanı var, merak edersen göz at.</p>
+    <p class="odul" id="sunOdul" hidden></p>
   </section>
   <section class="card" id="dayCard">
     <h2 id="title"></h2>
@@ -240,6 +246,7 @@ button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
     <div class="calhead"><button class="btn sm" id="calPrev" aria-label="Önceki ay">◀</button><h2 id="calTitle"></h2><button class="btn sm" id="calNext" aria-label="Sonraki ay">▶</button></div>
     <div class="calgrid" id="calGrid"></div>
     <p class="note" id="calSum"></p>
+    <p class="odul" id="odulNote"></p>
     <div id="calDetail" class="caldetail" hidden></div>
     </details>
     <details class="calwrap backup"><summary>İlerlemeyi taşı / yedekle</summary>
@@ -676,8 +683,18 @@ function renderChain(){
   $("chainGrid").querySelectorAll("button[data-k]").forEach(b=>b.onclick=()=>{ chainSel=b.dataset.k; renderChain(); });
   const box=$("chainDetail"); box.hidden=!(chainSel&&hist[chainSel]); if(!box.hidden) box.innerHTML=detailHtml(chainSel);
 }
+// Ödül yemeği: Pzt–Cmt en az 4 antrenman yapılan haftanın Pazar günü, tek öğün.
+const ODUL_MIN=4, ODUL_TXT="Tek bir öğün, bütün gün değil. Canın ne çekiyorsa normal bir tabak ye; oturarak, yavaş, ikinci tabak yok. Öncesinde ya da sonrasında öğün atlayıp telafi etme, sonraki öğünde normal düzenine dön.";
+function odulInfo(k){ const d=pd(k); if(d.getDay()!==0) return null; let n=0; for(let i=1;i<=6;i++){ const x=new Date(d); x.setDate(d.getDate()-i); if(isW(dstr(x))) n++; }
+  const t=new Date(); t.setHours(0,0,0,0); return {n, earned:n>=ODUL_MIN, future:d>t, today:d.getTime()===t.getTime()}; }
+function nextSunday(){ const t=new Date(); t.setHours(0,0,0,0); t.setDate(t.getDate()+((7-t.getDay())%7)); return dstr(t); }
+function renderOdul(){ const k=nextSunday(), o=odulInfo(k), el=$("odulNote"), sun=$("sunOdul");
+  if(o.today){ sun.hidden=false; sun.innerHTML = o.earned ? `🍽 <b>Bugün ödül yemeği günün!</b> Bu hafta ${o.n} antrenman yaptın. ${ODUL_TXT}` : `Bu hafta ${o.n} antrenman yapıldı, ödül yemeği için ${ODUL_MIN} gerekiyordu. Gelecek hafta!`; }
+  else sun.hidden=true;
+  el.innerHTML = o.today ? (o.earned?"🍽 Bugün ödül yemeği günü.":"Bu hafta ödül yemeği yok, gelecek hafta!")
+    : o.earned ? `🍽 Bu haftanın ödül yemeği kazanıldı (${o.n} antrenman): Pazar, tek öğün.` : `🍽 Pazar ödül yemeği için bu hafta ${ODUL_MIN} antrenman gerekiyor: şu an ${o.n}/${ODUL_MIN}.`; }
 function renderCal(){
-  renderChain();
+  renderChain(); renderOdul();
   if(calY==null){ const n=new Date(); calY=n.getFullYear(); calM=n.getMonth(); }
   $("calTitle").textContent=`${AYLAR[calM]} ${calY}`;
   const first=new Date(calY,calM,1), off=(first.getDay()+6)%7, days=new Date(calY,calM+1,0).getDate(), today=dstr(new Date());
@@ -685,7 +702,8 @@ function renderCal(){
   for(let i=0;i<off;i++) h+="<div></div>";
   let cnt=0;
   for(let dd=1;dd<=days;dd++){ const k=dstr(new Date(calY,calM,dd)); const done=isW(k), prep=!done&&!!(hist[k]&&hist[k].prep); if(done) cnt++;
-    h+=`<button data-k="${k}" class="${done?"done":(prep?"prep":"")} ${k===today?"today":""} ${k===calSel?"sel":""}" aria-label="${dd} ${AYLAR[calM]}${done?", tamamlandı":""}">${dd}</button>`; }
+    const od=odulInfo(k), rw=od&&od.earned, rwp=od&&!od.earned&&od.future&&!rw&&(pd(k)-new Date())<7*864e5;
+    h+=`<button data-k="${k}" class="${done?"done":(prep?"prep":"")} ${rw?"rw":""} ${rwp?"rwp":""} ${k===today?"today":""} ${k===calSel?"sel":""}" aria-label="${dd} ${AYLAR[calM]}${done?", tamamlandı":""}">${dd}</button>`; }
   $("calGrid").innerHTML=h;
   $("calSum").textContent = cnt ? `Bu ay ${cnt} gün işaretlendi. Ayrıntı için tarihe dokun.` : "Antrenmanını bitirdiğin günler burada ✓ ile işaretlenir.";
   $("calGrid").querySelectorAll("button").forEach(b=>b.onclick=()=>{ calSel=b.dataset.k; renderCal(); });
@@ -693,6 +711,8 @@ function renderCal(){
   if(!calSel){ box.hidden=true; return; }
   box.hidden=false;
   const [y,m,dd]=calSel.split("-");
+  const od=odulInfo(calSel);
+  if(od && !r){ box.innerHTML = `<b>${+dd} ${AYLAR[+m-1]} · Pazar</b><br>`+(od.earned ? `🍽 Ödül yemeği günü (o hafta ${od.n} antrenman). ${ODUL_TXT}` : od.future ? `🍽 Bu Pazar ödül yemeği için ${ODUL_MIN} antrenman gerekiyor: şu an ${od.n}/${ODUL_MIN}.` : `<span class="note">Dinlenme günü. O hafta ${od.n} antrenman yapılmış, ödül yemeği yoktu.</span>`); return; }
   box.innerHTML = r ? detailHtml(calSel)
                     : `<b>${+dd} ${AYLAR[+m-1]}</b><br><span class="note">Bu gün tamamlanmış antrenman yok.</span>`;
 }
