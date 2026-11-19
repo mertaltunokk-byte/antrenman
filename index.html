@@ -52,7 +52,12 @@ h2{margin:0 0 2px;font-size:20px}
 .ayrow span{flex:1;font-weight:700}
 .ayrow b{min-width:70px;text-align:center;font-size:17px}
 .ayrow button{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:800 22px var(--font);cursor:pointer;touch-action:manipulation}
-.aytot{margin:8px 0;font-weight:700;color:var(--navy2)}
+.aytot{margin:8px 0 4px;font-weight:700;color:var(--navy2)}
+.aybd{font-size:13px;color:var(--muted);margin:0 0 10px}
+.aybd table{width:100%;border-collapse:collapse;margin:2px 0 4px}
+.aybd th,.aybd td{text-align:right;padding:3px 4px;border-bottom:1px solid var(--line);font-variant-numeric:tabular-nums}
+.aybd th:first-child,.aybd td:first-child{text-align:left}
+.aybd tr.sum td{font-weight:800;color:var(--ink);border-bottom:0}
 .ayact{display:flex;gap:8px;justify-content:space-between}
 .ayok{background:var(--navy);color:#fff;border-color:var(--navy)}
 .aypre{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:6px}
@@ -210,6 +215,7 @@ button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
       <div class="ayrow"><span>Dinlenme</span><button data-k="r" data-d="-5">−</button><b id="ayR"></b><button data-k="r" data-d="5">+</button></div>
       <div class="ayrow"><span>Tur</span><button data-k="t" data-d="-1">−</button><b id="ayT"></b><button data-k="t" data-d="1">+</button></div>
       <p class="aytot" id="ayTot"></p>
+      <div class="aybd" id="ayBd"></div>
       <div class="ayact"><button class="btn sm" id="ayAuto">↺ Otomatik plana dön</button><button class="btn sm ayok" id="ayOk">Tamam</button></div>
     </div>
   </section>
@@ -379,9 +385,15 @@ function roundsText(d){ const n=toursFor(d), w=workOf(), r=restOf();
 const PRESETS=[{n:"Kolay",w:40,r:30,t:3},{n:"Normal",w:60,r:30,t:3},{n:"Zor",w:60,r:15,t:4},{n:"Hayvansı",w:60,r:10,t:5}];
 function presetOf(a){ return a ? PRESETS.find(x=>x.w===a.w&&x.r===a.r&&x.t===a.t) : null; }
 function presetMin(d,x){ const keep=localStorage.getItem("gobek-ayar"); try{ localStorage.setItem("gobek-ayar",JSON.stringify({w:x.w,r:x.r,t:x.t})); return workoutMin(d); } finally { try{ keep==null?localStorage.removeItem("gobek-ayar"):localStorage.setItem("gobek-ayar",keep); }catch(e){} } }
+// Tur tur süre dökümü (çalışma / dinlenme / hazırlan); toplam workoutMin ile aynı hesap
+function breakdown(d){ const n=toursFor(d), w=workOf(), rows=[]; for(let t=1;t<=n;t++){ let wk=0,rs=0,pr=t===1?5:0; d.ex.forEach((_,i)=>{ const r=restAfter(d,i,t); wk+=w; rs+=r; if(!r && i<d.ex.length-1) pr+=prepSec(d,i,i+1); }); rows.push({wk,rs,pr}); } return rows; }
+const fmtD=x=>{ const m=Math.floor(x/60), s=x%60; return m ? (s?`${m} dk ${s} sn`:`${m} dk`) : `${s} sn`; };
 function ayarUI(){ const d=DAYS[day], cp=presetOf(ayar());
   $("ayPre").innerHTML=PRESETS.map((x,i)=>`<button data-p="${i}" class="${cp===x?"on":""}">${x.n}<small>${x.w}/${x.r} sn</small><small>${x.t} tur</small><small>~${String(presetMin(d,x)).replace(".",",")} dk</small></button>`).join("");
   $("ayPre").querySelectorAll("button").forEach(b=>b.onclick=()=>{ if(playing) return; const x=PRESETS[+b.dataset.p]; try{ localStorage.setItem("gobek-ayar",JSON.stringify({w:x.w,r:x.r,t:x.t})); }catch(e){} updDoses(); }); $("ayW").textContent=workOf()+" sn"; $("ayR").textContent=restOf()+" sn"; $("ayT").textContent=toursFor(d)+" tur";
+  { const rows=breakdown(d), T=rows.reduce((a,r)=>({wk:a.wk+r.wk,rs:a.rs+r.rs,pr:a.pr+r.pr}),{wk:0,rs:0,pr:0});
+    $("ayBd").innerHTML=`<table><tr><th></th><th>Çalışma</th><th>Dinlenme</th><th>Hazırlan</th></tr>`+rows.map((r,i)=>`<tr><td>${i+1}. tur</td><td>${fmtD(r.wk)}</td><td>${fmtD(r.rs)}</td><td>${fmtD(r.pr)}</td></tr>`).join("")
+      +`<tr class="sum"><td>Toplam</td><td>${fmtD(T.wk)}</td><td>${fmtD(T.rs)}</td><td>${fmtD(T.pr)}</td></tr></table>Her tur ${d.ex.length} hareket × ${workOf()} sn. Dinlenme turun sonunda (son turda yok); 3. turdan itibaren 2 harekette bir de var. Hazırlan: hareketler arası pozisyon alma süresi. Toplam: ${fmtD(T.wk+T.rs+T.pr)}.`; }
   $("ayTot").textContent=`Bugün: yaklaşık ${String(workoutMin(d)).replace(".",",")} dk`+(ayar()?" · "+(cp?cp.n:"kendi ayarın"):" · otomatik plan");
   $("ayarBtn").textContent = ayar() ? (cp ? `⚙️ ${cp.n}: ${workOf()} sn / ${restOf()} sn / ${toursFor(d)} tur` : `⚙️ Kendi ayarın: ${workOf()} sn / ${restOf()} sn / ${toursFor(d)} tur`) : "⚙️ Süreleri kendim ayarla"; }
 $("ayarBtn").onclick=()=>{ if(playing) return; $("ayar").hidden=!$("ayar").hidden; ayarUI(); };
