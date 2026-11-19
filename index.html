@@ -71,7 +71,7 @@ li.ex.done b{text-decoration:line-through;opacity:.6}
 .cue.rest{background:var(--navy2)}
 body.focus header, body.focus .now{display:none}
 body.focus .radio{margin-bottom:6px}
-body.focus .radio select{padding:7px 10px;font-size:13px}
+body.focus .radio select{padding:7px 10px;font-size:16px}
 body.focus .radio button{padding:7px 12px;font-size:13px;min-width:100px}
 body.focus #gifwrap{position:fixed;left:0;right:0;top:0;bottom:var(--fb,100px);z-index:5;background:var(--bg);padding:calc(env(safe-area-inset-top,0px) + 8px) 8px 8px;display:flex;flex-direction:column;margin:0}
 body.focus .cue{flex:none;margin:0 0 8px}
@@ -116,6 +116,8 @@ footer.player{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--
 .calgrid button{aspect-ratio:1;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;font:600 13px var(--font);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:0;min-width:0}
 .calgrid button.today{border:2px solid var(--navy2)}
 .calgrid button.done{background:var(--ok);color:#fff;border-color:var(--ok)}
+.calgrid button.prep{border:2px dashed var(--ok)}
+.start:disabled{background:var(--ok);opacity:.8;cursor:default}
 .calgrid button.done::after{content:"✓";font-size:14px;line-height:1}
 .calgrid button.sel{outline:3px solid var(--red);outline-offset:1px}
 .caldetail{margin-top:10px;border-top:1px solid var(--line);padding-top:10px;font-size:14px}
@@ -150,7 +152,7 @@ footer.player{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--
 .pitem.on .txt{text-decoration:line-through;opacity:.6}
 .plate{margin-top:12px;padding:12px;border-radius:12px;background:var(--bg);border:1px solid var(--line);line-height:1.5}
 .radio{display:flex;gap:8px;align-items:center;margin-bottom:8px}
-.radio select{flex:1;min-width:0;border:1px solid var(--line);border-radius:12px;padding:10px;font:600 14px var(--font);background:var(--bg);color:var(--ink);-webkit-appearance:none;appearance:none}
+.radio select{flex:1;min-width:0;border:1px solid var(--line);border-radius:12px;padding:10px;font:600 16px var(--font);background:var(--bg);color:var(--ink);-webkit-appearance:none;appearance:none}
 .radio button{flex:none;border:0;border-radius:12px;padding:10px 14px;font:800 14px var(--font);background:var(--navy);color:#fff;cursor:pointer;min-width:112px}
 .radio button.on{background:#2e7d4f}
 .radio button:disabled{opacity:.45}
@@ -179,7 +181,7 @@ button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
     <p class="sub" id="subtitle"></p>
     <p class="rounds" id="rounds"></p>
   </section>
-  <div class="gifwrap" id="gifwrap"><div class="cue" id="cue" hidden><b id="cueMain"></b><span id="cueSub"></span></div><div class="gif anim" id="anim" role="img" aria-label="Hareket animasyonu"><div id="animIn"></div></div><div class="ov" id="ov" hidden><span id="ovPhase">SÜRE</span><b id="ovClock">00:00</b></div><div class="lastb" id="lastBadge" hidden></div><button class="finish" id="finishBtn" hidden>✓ Bitir</button><div class="kegel" id="kegel" hidden>
+  <div class="gifwrap" id="gifwrap"><div class="cue" id="cue" hidden><b id="cueMain"></b><span id="cueSub"></span></div><div class="gif anim" id="anim" role="img" aria-label="Hareket animasyonu"><div id="animIn"></div></div><div class="ov" id="ov" hidden><span id="ovPhase">SÜRE</span><b id="ovClock">00:00</b></div><div class="lastb" id="lastBadge" hidden></div><button class="finish" id="finishBtn" hidden>⏭ Geç</button><div class="kegel" id="kegel" hidden>
     <h3 id="kegelTitle">Kegel</h3>
     <div class="kc" id="kegelCircle"><div><span id="kegelWord">HAZIR</span><small id="kegelSec"></small></div></div>
     <div class="kt" id="kegelCount"></div>
@@ -250,7 +252,7 @@ function layoutAnim(){
   const [a,b]=(m.ar||"392/322").split("/").map(Number), ar=a/b;
   if(document.body.classList.contains("focus")){
     // Tam ekran: üstteki yazı kısmını kırp (şerit zaten gösteriyor), figürü büyüt
-    const c = m.ar ? {s:1.1,t:0.21,b:0} : {s:1.38,t:0.33,b:0.09};
+    const c = m.ar ? {s:/^wallsit/.test(shownKey)?1:1.1,t:0.21,b:0} : {s:1.38,t:0.33,b:0.09};
     let w=W*c.s, h=w/ar; const vis=1-c.t-c.b; if(h*vis>H){ h=H/vis; w=h*ar; }
     el.style.width=w+"px"; el.style.height=h+"px"; el.style.left=((W-w)/2)+"px"; el.style.top=((H-h*vis)/2 - h*c.t)+"px"; el.style.clipPath=`inset(${c.t*100}% 0 ${c.b*100}% 0)`; return;
   }
@@ -297,8 +299,8 @@ const DAYS = [
  {k:"sali",tab:"Sal",name:"Salı",sub:"Tüm vücut kuvvet A",rounds:"",tours:3,restTour:60,
   ex:[["Sandalyeye otur-kalk","10–12 tekrar","sali_0"],["Duvar şınavı","10–12 tekrar","sali_1"],["🪑 Eğimli plank (eller sandalyede)","20–30 sn tut","ch_plank"],["Kuş-köpek (Bird dog)","8 tekrar / taraf","sali_2"],["Diz üstü yan plank","20 sn / taraf","sali_3"],["Kalça köprüsü","15 tekrar","sali_4"]],
   extra:"+ 20–30 dk tempolu yürüyüş"},
- {k:"carsamba",tab:"Çar",name:"Çarşamba",sub:"Zıplamasız kardiyo devresi",rounds:"",tours:4,toursLate:5,fixedIv:[40,20],
-  ex:[["Yerinde diz çekerek yürüyüş","40 sn","carsamba_0"],["🪑 Eğimli mountain climber","40 sn · konuşabileceğin tempo","ch_climber"],["Gölge boks","40 sn","carsamba_1"],["Ayakta çapraz diz-dirsek","40 sn","carsamba_2"],["Tempolu sandalye squat","40 sn","carsamba_3"]],
+ {k:"carsamba",tab:"Çar",name:"Çarşamba",sub:"Zıplamasız kardiyo devresi",rounds:"",tours:4,toursLate:5,
+  ex:[["Yerinde diz çekerek yürüyüş","süre boyunca","carsamba_0"],["🪑 Eğimli mountain climber","konuşabileceğin tempo","ch_climber"],["Gölge boks","süre boyunca","carsamba_1"],["Ayakta çapraz diz-dirsek","süre boyunca","carsamba_2"],["Tempolu sandalye squat","süre boyunca","carsamba_3"]],
   extra:"+ 20 dk tempolu yürüyüş"},
  {k:"persembe",tab:"Per",name:"Perşembe",sub:"Karın & core B (bel dostu)",rounds:"",tours:3,restTour:60,
   ex:[["Curl-up (McGill)","8 sn tut / 2 sn bırak, süre boyunca","persembe_0"],["Bükük diz topuk dokundurma","10 tekrar / taraf","persembe_1"],["🪑 Önkol plank diz çekiş (sandalye)","6–8 tekrar / taraf · yavaş","ch_forearm"],["Kuş-köpek (Bird dog)","8 tekrar / taraf","persembe_2"],["Diz üstü yan plank","20–30 sn / taraf","persembe_3"],["Ölü böcek (Dead bug)","10 tekrar / taraf","persembe_4"]],
@@ -306,14 +308,17 @@ const DAYS = [
  {k:"cuma",tab:"Cum",name:"Cuma",sub:"Tüm vücut kuvvet B",rounds:"",tours:3,restTour:60,
   ex:[["Sandalyeye otur-kalk","12 tekrar","cuma_0"],["Diz üstü şınav","8–10 tekrar","cuma_1"],["🪑 Çapraz mountain climber (sandalye)","8–10 tekrar / taraf · kontrollü","ch_cross"],["Süperman","10 tekrar × 2 sn","cuma_2"],["Ters crunch","10 tekrar","cuma_3"],["Kalça köprüsü","15 tekrar","cuma_4"]],
   extra:"+ 30 dk tempolu yürüyüş"},
- {k:"cumartesi",tab:"Cmt",name:"Cumartesi",sub:"Sandalye kombinasyonu (karın) + yemek hazırlığı",rounds:"",tours:3,fixedIv:[30,30],
-  ex:[["🪑 Eğimli mountain climber","30 sn · rahat tempo","ch_climber"],["🪑 Sandalyede oturarak diz çekiş","30 sn · yavaş","ch_seated"],["🪑 Çapraz mountain climber","30 sn · kontrollü","ch_cross"],["🪑 Eğimli plank","30 sn tut","ch_plank"],["🪑 Yüksek diz + kalça kaldırma","30 sn · yavaş, tepede 1 sn","ch_highknee"],["🪑 Önkol plank diz çekiş","30 sn · yavaş","ch_forearm"]],
+ {k:"cumartesi",tab:"Cmt",name:"Cumartesi",sub:"Sandalye kombinasyonu (karın) + yemek hazırlığı",rounds:"",tours:3,
+  ex:[["🪑 Eğimli mountain climber","rahat tempo","ch_climber"],["🪑 Sandalyede oturarak diz çekiş","yavaş","ch_seated"],["🪑 Çapraz mountain climber","kontrollü","ch_cross"],["🪑 Eğimli plank","süre boyunca tut","ch_plank"],["🪑 Yüksek diz + kalça kaldırma","yavaş, tepede 1 sn","ch_highknee"],["🪑 Önkol plank diz çekiş","yavaş","ch_forearm"]],
   extra:"+ 30–45 dk rahat yürüyüş. Sandalyeyi duvara daya ki kaymasın."}
 ];
 const $ = id => document.getElementById(id);
 const store = {get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 
 let day = 0, stIdx = 0, playing = false;
+let wDate = null;
+const wD = ()=> wDate || dstr(new Date());
+const isW = k=>{ const r=hist[k]; return !!(r&&r.sets&&r.sets.length); };
 let cur = 0, tour = 1, t0 = 0, tick = null, ivPhase = "work", ivLeft = 0;
 
 function realDayIdx(){const d=new Date().getDay();return d>=1&&d<=6?d-1:-1}
@@ -340,7 +345,7 @@ function renderPrep(){
   const k=dstr(new Date()), done=!!(hist[k]&&hist[k].prep), b=$("prepBtn");
   b.classList.toggle("on",done);
   b.textContent = done ? "✓ Yemek hazırlığı yapıldı" : "Yemek hazırlığı yapıldı ✓";
-  $("prepNote").textContent = done ? "Zincire eklendi. Geri almak için tekrar dokun." : "Hazırlığı bitirince dokun.";
+  $("prepNote").textContent = done ? "Takvime not edildi (100 güne sayılmaz). Geri almak için tekrar dokun." : "Hazırlığı bitirince dokun.";
   b.onclick=async()=>{
     const r0=hist[k];
     if(r0&&r0.prep){
@@ -405,17 +410,18 @@ function step(dir){
   }
 }
 function startPrep(sec){ const d=DAYS[day]; ivPhase="prep"; ivLeft=sec; $("phase").textContent=`HAZIRLAN · sıradaki: ${d.ex[cur][0]} · pozisyonunu al`; setClock(fmt(ivLeft),"HAZIRLAN",true); }
-function workText(){ const d=DAYS[day], e=d.ex[cur]; $("phase").textContent=`ÇALIŞ · ${e[0]} · hedef: ${e[1]}`+(/taraf/.test(e[1])?" (yarısında taraf değiştir)":"")+(/sn tut|sn \/ taraf/.test(e[1])?" · zorlanırsan kısa bırak, tekrar tut":""); }
+function workText(){ const d=DAYS[day], e=d.ex[cur]; $("phase").textContent=`ÇALIŞ · ${e[0]} · hedef: ${e[1]}`+(/taraf/.test(e[1])?" (yarısında taraf değiştir)":"")+(/\btut\b|sn \/ taraf/.test(e[1])?" · zorlanırsan kısa bırak, tekrar tut":""); }
 function setClock(t,label,rest){ $("ovClock").textContent=t; $("ovPhase").textContent=label; $("ov").classList.toggle("rest",!!rest); }
 function startTimer(resume){
   const d=DAYS[day];
+  wDate = (resume&&resume.date) || dstr(new Date());
   if(resume){ cur=resume.cur; tour=resume.tour; times=resume.times||{}; }
   else { cur=0; tour=1; times={}; }
   t0=Date.now(); exSec=0; resting=false; showTimes(); $("list").querySelectorAll("li").forEach((l,i)=>l.classList.toggle("done", i<cur));
   $("timer").classList.add("on"); $("timer").classList.remove("over");
   workText(); if(resume) $("phase").textContent="Kaldığın yerden devam! "+$("phase").textContent;
   startPrep(5);
-  $("ov").hidden=false; $("finishBtn").hidden=false; $("finishBtn").textContent="✓ Bitir";
+  $("ov").hidden=false; $("finishBtn").hidden=false; $("finishBtn").textContent="⏭ Geç";
   clearInterval(tick);
   tick = setInterval(()=>{
     if(ivOf(d)){
@@ -427,9 +433,9 @@ function startTimer(resume){
         if(ivPhase==="prep"){ ivPhase="work"; ivLeft=ivOf(d)[0]; beep(); workText(); setClock(fmt(ivLeft),"ÇALIŞ",false); return; }
         if(ivPhase==="work" && !lastOne && !restAfter(d,cur,tour)){ const ps=prepSec(d,cur,cur+1); beep(); step(1); startPrep(ps); return; }
         if(ivPhase==="work" && !lastOne){ const endT=cur===d.ex.length-1, ni=endT?0:cur+1; ivPhase="rest"; ivLeft=restAfter(d,cur,tour);
-          $("phase").textContent=(endT?`Tur ${tour} bitti! `:"")+`DİNLEN · sıradaki: ${d.ex[ni][0]}`; showAnim(akey(d,ni)); beep(); }
+          $("phase").textContent=(endT?`Tur ${tour} bitti! `:"")+`DİNLEN · sıradaki: ${d.ex[ni][0]}`; showAnim(akey(d,ni)); $("lastBadge").hidden=true; saveProgress(ni, endT?tour+1:tour); beep(); }
         else { ivPhase="work"; ivLeft=ivOf(d)[0]; beep(); if(step(1)) return; workText(); }
-      } else if(ivPhase==="work" && /taraf/.test(d.ex[cur][1]) && ivLeft===Math.floor(ivOf(d)[0]/2)){ beep(); $("phase").textContent="↔ Taraf değiştir! · "+d.ex[cur][0];
+      } else if(ivPhase==="work" && /taraf/.test(d.ex[cur][1]) && ivLeft===Math.floor(ivOf(d)[0]/2)){ beep(); $("phase").textContent="↔ Taraf değiştir! · "+d.ex[cur][0]+" · hedef: "+d.ex[cur][1];
       }
       setClock(fmt(ivLeft), ivPhase==="work"?"ÇALIŞ":(ivPhase==="prep"?"HAZIRLAN":"DİNLEN"), ivPhase!=="work");
     } else if(resting){
@@ -444,15 +450,15 @@ function startTimer(resume){
 }
 // Yarım kalan antrenman (sayfa yenilenirse kaldığı yerden devam)
 const PKEY="gobek-devam";
-function saveProgress(){ try{ localStorage.setItem(PKEY, JSON.stringify({date:dstr(new Date()), k:DAYS[day].k, cur, tour, times})); }catch(e){} }
+function saveProgress(c=cur,t=tour){ try{ localStorage.setItem(PKEY, JSON.stringify({date:wD(), k:DAYS[day].k, cur:c, tour:t, times})); }catch(e){} }
 function clearProgress(){ try{ localStorage.removeItem(PKEY); }catch(e){} }
 function getProgress(){ try{ const v=JSON.parse(localStorage.getItem(PKEY)||"null"); if(v && v.date===dstr(new Date()) && v.k===DAYS[day].k && (v.cur>0||v.tour>1)) return v; }catch(e){} return null; }
 function showResumeHint(){ const v=getProgress(); if(v && !playing) $("now").textContent=`Yarım kalan antrenman var: Başlat'a basınca ${v.tour}. tur ${v.cur+1}. hareketten devam eder. Baştan başlamak için Baştan al.`; }
 let wake=null, awake=false;
-async function keepAwakeOn(){ awake=true; unlockAudio();
+async function keepAwakeOn(){ awake=true; try{ if(navigator.audioSession) navigator.audioSession.type="playback"; }catch(e){} unlockAudio();
   try{ const v=$("keepAwake"); v.muted=true; const p=v.play(); if(p) p.catch(()=>{}); }catch(e){}
   try{ if(navigator.wakeLock && !wake){ wake=await navigator.wakeLock.request("screen"); wake.addEventListener("release",()=>{ wake=null; }); } }catch(e){ wake=null; } }
-function keepAwakeOff(){ awake=false; try{ $("keepAwake").pause(); }catch(e){} try{ wake?.release(); }catch(e){} wake=null; }
+function keepAwakeOff(){ awake=false; try{ if(navigator.audioSession) navigator.audioSession.type="auto"; }catch(e){} try{ $("keepAwake").pause(); }catch(e){} try{ wake?.release(); }catch(e){} wake=null; }
 document.addEventListener("visibilitychange",()=>{ if(!document.hidden && awake) keepAwakeOn(); });
 async function startAll(){
   playing=true; stIdx=0;
@@ -463,11 +469,12 @@ async function startAll(){
 }
 function stopAll(){
   playing=false; clearInterval(tick); stopRadio(); endWall(false); endKegel();
-  $("startBtn").textContent="▶ Antrenmanı başlat"; $("startBtn").classList.remove("stop");
+  $("startBtn").classList.remove("stop"); setStartIdle();
   $("timer").classList.remove("on"); $("ov").hidden=true; $("finishBtn").hidden=true; animKey=null; showAnim(akey(DAYS[day],0)); $("now").textContent="Antrenman durduruldu."; markCur(); showResumeHint();
   keepAwakeOff();
 }
-$("startBtn").onclick = ()=>{ unlockAudio(); playing ? stopAll() : startAll(); };
+function setStartIdle(){ const b=$("startBtn"), sun=realDayIdx()<0 && !playing; b.disabled=sun; b.textContent = playing ? "■ Durdur" : (sun ? "🌿 Bugün dinlenme günü" : "▶ Antrenmanı başlat"); }
+$("startBtn").onclick = ()=>{ unlockAudio(); if(playing) stopAll(); else if(realDayIdx()>=0) startAll(); };
 document.addEventListener("touchend",unlockAudio,{passive:true});
 document.addEventListener("click",unlockAudio);
 $("nextBtn").onclick = ()=>{ const d=DAYS[day]; if(playing && !wallOn && kegelIdx<0 && ivPhase==="prep"){ ivPhase="work"; ivLeft=ivOf(d)[0]; workText(); setClock(fmt(ivLeft),"ÇALIŞ",false); return; } if(step(1)) return; ivPhase="work";ivLeft=ivOf(d)[0];workText();setClock(fmt(ivLeft),"ÇALIŞ",false); };
@@ -475,8 +482,9 @@ $("prevBtn").onclick = ()=>{ const d=DAYS[day]; if(step(-1)) return; if(playing&
 // ---------- Kegel (set bitiminde) ----------
 // Protokol: 5 sn tut / 5 sn bırak × 10 (1–2. hafta), 7 sn (3–4. hafta), 10 sn (5.+ hafta); 4. haftadan sonra sona 10 hızlı kasılma.
 function kegelPlan(){
-  const ks=Object.keys(hist).sort(); const first=ks.length?pd(ks[0]):new Date(); first.setHours(0,0,0,0);
-  const wk=Math.max(1,Math.floor((Date.now()-first.getTime())/(7*864e5))+1);
+  // Seviye takvimle değil, yapılan antrenman günüyle ilerler (6 antrenman = 1 hafta); ara verince seviye yükselmez
+  const t=wD(), n=Object.keys(hist).filter(k=>k<t && isW(k)).length;
+  const wk=Math.floor(n/6)+1;
   return {wk, hold: wk<=2?5:(wk<=4?7:10), reps:10, quick: wk>4?10:0};
 }
 function kegelDoseText(){ const k=kegelPlan(); return `${k.wk}. hafta · ${k.reps} × ${k.hold} sn sık / ${k.hold} sn bırak${k.quick?` + ${k.quick} hızlı`:""} · sırtüstü`; }
@@ -487,7 +495,7 @@ function startKegel(){
   for(let i=1;i<=k.quick;i++){ kegelSeq.push({w:"SIK",s:1,c:`Hızlı ${i}/${k.quick}`,sik:1}); kegelSeq.push({w:"BIRAK",s:1,c:`Hızlı ${i}/${k.quick}`}); }
   $("kegel").hidden=false; $("ov").hidden=true; $("finishBtn").hidden=true; $("lastBadge").hidden=true;
   $("gifwrap").scrollIntoView({behavior:"smooth",block:"start"});
-  kegelIdx=-1; clearInterval(kegelTimer); $("kegelTitle").textContent = hist[dstr(new Date())]&&hist[dstr(new Date())].sets&&hist[dstr(new Date())].sets.length ? "Son adım · Kegel" : "Kegel"; kegelNext(); kegelTimer=setInterval(kegelTick,200);
+  kegelIdx=-1; clearInterval(kegelTimer); $("kegelTitle").textContent = isW(wD()) ? "Son adım · Kegel" : "Kegel"; kegelNext(); kegelTimer=setInterval(kegelTick,200);
 }
 function kegelNext(){
   kegelIdx++;
@@ -504,7 +512,7 @@ async function endKegel(done){ // done: true=bitti, false=atlandı, undefined=ip
   if(kegelIdx<0 && $("kegel").hidden) return;
   clearInterval(kegelTimer); kegelTimer=null; const was=kegelIdx; kegelIdx=-1; $("kegel").hidden=true; $("kegelCircle").classList.remove("sik");
   if(was<0) return;
-  const date=dstr(new Date()); const r=hist[date]; const workout=!!(r&&r.sets&&r.sets.length);
+  const date=wD(); const r=hist[date]; const workout=!!(r&&r.sets&&r.sets.length);
   if(done && workout) await saveRecord({...r, kegel:true});
   if(done===undefined) return;
   finishFlow(workout ? (done ? "🎉 Antrenman, duvar oturuşu ve Kegel tamam! Takvime ✓ işlendi. Şimdi yürüyüş zamanı." : "🎉 Antrenman tamam! Takvime ✓ işlendi. (Kegel atlandı.) Şimdi yürüyüş zamanı.")
@@ -513,7 +521,7 @@ async function endKegel(done){ // done: true=bitti, false=atlandı, undefined=ip
 // Akış bittiğinde: sayaçları kapat, mesajı göster, Başlat düğmesini sıfırla
 function finishFlow(msg){
   playing=false; clearInterval(tick); resting=false;
-  $("startBtn").textContent="▶ Antrenmanı başlat"; $("startBtn").classList.remove("stop");
+  $("startBtn").classList.remove("stop"); setStartIdle();
   $("ov").hidden=true; $("finishBtn").hidden=true; $("lastBadge").hidden=true;
   $("timer").classList.add("on","over"); $("phase").textContent=msg; $("roundtxt").textContent="";
   $("list").querySelectorAll("li").forEach(li=>li.classList.remove("cur"));
@@ -521,7 +529,7 @@ function finishFlow(msg){
   keepAwakeOff();
 }
 $("kegelSkip").onclick=()=>endKegel(false);
-$("kegelNow").onclick=()=>{ if(playing) stopAll(); keepAwakeOn(); startWall(false); };
+$("kegelNow").onclick=()=>{ if(playing) stopAll(); wDate=null; keepAwakeOn(); startWall(false); };
 // ---------- Duvar oturuşu (setlerden sonra, Kegel'den önce) ----------
 function wallPlan(){ const wk=kegelPlan().wk;
   const sec = wk<=2?30 : wk===3?45 : wk===4?60 : wk<=6?75 : wk<=8?90 : wk<=10?105 : 120;
@@ -548,9 +556,9 @@ function wallTick(){
 }
 async function endWall(done){
   if(!wallOn) return; wallOn=false; clearInterval(wallTimer); wallTimer=null;
-  $("finishBtn").textContent="✓ Bitir"; $("finishBtn").hidden=true;
+  $("finishBtn").textContent="⏭ Geç"; $("finishBtn").hidden=true;
   if(!done) return;
-  beep(); const date=dstr(new Date()), r=hist[date];
+  beep(); const date=wD(), r=hist[date];
   const held = wallPrep ? 0 : Math.min(wallPlan().sec, Math.round(wallPlan().sec-(wallEnd-Date.now())/1000)); if(held>0 && r&&r.sets&&r.sets.length) await saveRecord({...r, wall:held});
   $("phase").textContent="✓ Duvar oturuşu bitti. Şimdi sırtüstü uzan: Kegel."; $("roundtxt").textContent="";
   animKey=null; showAnim(akey(DAYS[day],0)); startKegel();
@@ -594,8 +602,8 @@ async function initHist(){
   }catch(e){}
 }
 async function saveDone(){
-  const d=DAYS[day], date=dstr(new Date());
-  const rec={date, day:d.name, sub:d.sub, prep:!!(hist[date]&&hist[date].prep), sets:d.ex.map((e,i)=>({n:e[0], t:(times[i]||[]).map(x=>x==null?0:x)}))};
+  const d=DAYS[day], date=wD();
+  const rec={...(hist[date]||{}), date, day:d.name, sub:d.sub, prep:!!(hist[date]&&hist[date].prep), sets:d.ex.map((e,i)=>({n:e[0], t:(times[i]||[]).map(x=>x==null?0:x)}))};
   return saveRecord(rec);
 }
 async function saveRecord(rec){
@@ -605,11 +613,11 @@ async function saveRecord(rec){
 }
 const pd=k=>{ const [y,m,d]=k.split("-").map(Number); return new Date(y,m-1,d); };
 function chainInfo(){
-  const keys=Object.keys(hist).sort(); if(!keys.length) return {cur:[],best:0,lastBreak:null};
+  const keys=Object.keys(hist).filter(isW).sort(); if(!keys.length) return {cur:[],best:0,lastBreak:null};
   const segs=[[]]; let lastBreak=null; const today=new Date(); today.setHours(0,0,0,0);
   for(let dt=pd(keys[0]); dt<=today; dt.setDate(dt.getDate()+1)){
     const k=dstr(dt), wd=dt.getDay();
-    if(hist[k]) segs[segs.length-1].push(k);
+    if(isW(k)) segs[segs.length-1].push(k);
     else if(wd>=1 && wd<=5 && dt<today){ if(segs[segs.length-1].length){ segs.push([]); lastBreak=k; } }
   }
   return {cur:segs[segs.length-1], best:Math.max(...segs.map(x=>x.length)), lastBreak};
@@ -620,15 +628,15 @@ function detailHtml(k){ const r=hist[k]; const [y,m,dd]=k.split("-");
   return r ? `<b>${+dd} ${AYLAR[+m-1]} · ${r.day} (${r.sub}) ✓${r.prep?' · Yemek hazırlığı ✓':''}${r.wall?' · Duvar '+r.wall+' sn ✓':''}${r.kegel?' · Kegel ✓':''}</b><ul>${r.sets.map(x=>`<li>${x.n}: ${x.t.length?x.t.map((s,j)=>`${j+1}. set ${s} sn`).join(", "):"—"}</li>`).join("")}</ul>` : ""; }
 function renderChain(){
   const {cur,best,lastBreak}=chainInfo(), today=dstr(new Date());
-  const all=Object.keys(hist).sort(), tot=Math.min(all.length,100), n=cur.length;
+  const all=Object.keys(hist).filter(isW).sort(), tot=Math.min(all.length,100), n=cur.length;
   $("chainCount").textContent=tot; $("chainBest").textContent=n; $("chainBest2").textContent=best; $("chainFill").style.width=tot+"%";
   const m=$("chainMsg"); m.classList.remove("broken");
   if(tot>=100) m.textContent="🏆 100 gün tamam!";
-  else if(!hist[today] && !n && lastBreak){ const d=pd(lastBreak); m.textContent=`Seri ${d.getDate()} ${AYLAR[d.getMonth()]} günü koptu ama toplamın duruyor: ${tot}/100. Bugün yeni seriye başla!`; m.classList.add("broken"); }
+  else if(!isW(today) && !n && lastBreak){ const d=pd(lastBreak); m.textContent=`Seri ${d.getDate()} ${AYLAR[d.getMonth()]} günü koptu ama toplamın duruyor: ${tot}/100. Bugün yeni seriye başla!`; m.classList.add("broken"); }
   else if(!tot) m.textContent="İlk antrenmanını bitir, ilk halka eklensin.";
-  else m.textContent = hist[today] ? `✓ Bugün işlendi. 100 güne ${100-tot} gün kaldı.` : `Bugünkü antrenmanı bitir, ${tot+1}. halka eklensin.`;
+  else m.textContent = isW(today) ? `✓ Bugün işlendi. 100 güne ${100-tot} gün kaldı.` : `Bugünkü antrenmanı bitir, ${tot+1}. halka eklensin.`;
   let h=""; for(let i=0;i<100;i++){ const k=all[i];
-    h+=`<button class="${k?"on":""} ${i===tot&&!hist[today]?"next":""} ${(i+1)%25===0?"ms":""} ${k&&k===chainSel?"sel":""}" ${k?`data-k="${k}"`:""} aria-label="${i+1}. gün${k?", tamamlandı":""}">${i+1}</button>`; }
+    h+=`<button class="${k?"on":""} ${i===tot&&!isW(today)?"next":""} ${(i+1)%25===0?"ms":""} ${k&&k===chainSel?"sel":""}" ${k?`data-k="${k}"`:""} aria-label="${i+1}. gün${k?", tamamlandı":""}">${i+1}</button>`; }
   $("chainGrid").innerHTML=h;
   $("chainGrid").querySelectorAll("button[data-k]").forEach(b=>b.onclick=()=>{ chainSel=b.dataset.k; renderChain(); });
   const box=$("chainDetail"); box.hidden=!(chainSel&&hist[chainSel]); if(!box.hidden) box.innerHTML=detailHtml(chainSel);
@@ -641,8 +649,8 @@ function renderCal(){
   let h=["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"].map(w=>`<div class="wd">${w}</div>`).join("");
   for(let i=0;i<off;i++) h+="<div></div>";
   let cnt=0;
-  for(let dd=1;dd<=days;dd++){ const k=dstr(new Date(calY,calM,dd)); const done=!!hist[k]; if(done) cnt++;
-    h+=`<button data-k="${k}" class="${done?"done":""} ${k===today?"today":""} ${k===calSel?"sel":""}" aria-label="${dd} ${AYLAR[calM]}${done?", tamamlandı":""}">${dd}</button>`; }
+  for(let dd=1;dd<=days;dd++){ const k=dstr(new Date(calY,calM,dd)); const done=isW(k), prep=!done&&!!(hist[k]&&hist[k].prep); if(done) cnt++;
+    h+=`<button data-k="${k}" class="${done?"done":(prep?"prep":"")} ${k===today?"today":""} ${k===calSel?"sel":""}" aria-label="${dd} ${AYLAR[calM]}${done?", tamamlandı":""}">${dd}</button>`; }
   $("calGrid").innerHTML=h;
   $("calSum").textContent = cnt ? `Bu ay ${cnt} gün işaretlendi. Ayrıntı için tarihe dokun.` : "Antrenmanını bitirdiğin günler burada ✓ ile işaretlenir.";
   $("calGrid").querySelectorAll("button").forEach(b=>b.onclick=()=>{ calSel=b.dataset.k; renderCal(); });
@@ -739,7 +747,7 @@ let shownDate=null;
 function pickToday(){
   shownDate=dstr(new Date()); day=todayIdx();
   try{ const v=JSON.parse(localStorage.getItem(PKEY)||"null"); if(v&&v.date===shownDate){ const i=DAYS.findIndex(x=>x.k===v.k); if(i>=0) day=i; } }catch(e){}
-  $("sunCard").hidden = realDayIdx()>=0;
+  $("sunCard").hidden = realDayIdx()>=0; setStartIdle();
 }
 function busy(){ return playing || wallOn || kegelIdx>=0; }
 let hiddenAt=0;
