@@ -136,6 +136,8 @@ footer.player{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--
 .radio button{flex:none;border:0;border-radius:12px;padding:10px 14px;font:800 14px var(--font);background:var(--navy);color:#fff;cursor:pointer;min-width:112px}
 .radio button.on{background:#2e7d4f}
 .radio button:disabled{opacity:.45}
+.sun{border-color:var(--ok);border-width:2px}
+.sun h2{color:var(--ok)}
 .now{font-size:12px;color:var(--muted);margin-top:6px;min-height:16px}
 .now a{color:var(--navy2)}
 button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
@@ -149,6 +151,10 @@ button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
     <h2>Cumartesi: Yemek hazırlığı</h2>
     <button class="prepbtn" id="prepBtn">Yemek hazırlığı yapıldı ✓</button>
     <p class="note" id="prepNote"></p>
+  </section>
+  <section class="card sun" id="sunCard" hidden>
+    <h2>Bugün Pazar: dinlenme günü 🌿</h2>
+    <p class="sub">Zincir kırılmaz. İstersen 30–45 dk rahat yürüyüş yap, haftanın yemeklerini planla. Aşağıda yarının (Pazartesi) antrenmanı var, merak edersen göz at.</p>
   </section>
   <section class="card" id="dayCard">
     <h2 id="title"></h2>
@@ -208,7 +214,7 @@ button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
     <button class="start" id="startBtn">▶ Antrenmanı başlat</button>
     <button class="skip reset" id="resetBtn">↺ Sıfırla</button>
   </div>
-  <div class="now" id="now">Gününü seç ve Başlat'a bas. Süre görselin sağ üstünde görünür.</div>
+  <div class="now" id="now">Bugünün antrenmanı hazır, Başlat'a bas. Süre görselin sağ üstünde görünür.</div>
 </footer>
 
 <script>
@@ -670,7 +676,23 @@ if("serviceWorker" in navigator){
   let reloaded=false;
   navigator.serviceWorker.addEventListener("controllerchange",()=>{ if(reloaded) return; const go=()=>{ if(!playing && !wallOn && kegelIdx<0){ reloaded=true; location.reload(); } else setTimeout(go,5000); }; if(hadCtrl) go(); });
 }
-day = todayIdx(); try{ const v=JSON.parse(localStorage.getItem(PKEY)||"null"); if(v&&v.date===dstr(new Date())){ const i=DAYS.findIndex(x=>x.k===v.k); if(i>=0) day=i; } }catch(e){}
+// Açılışta ve uygulamaya geri dönüldüğünde bugünün günü kendiliğinden seçilir
+let shownDate=null;
+function pickToday(){
+  shownDate=dstr(new Date()); day=todayIdx();
+  try{ const v=JSON.parse(localStorage.getItem(PKEY)||"null"); if(v&&v.date===shownDate){ const i=DAYS.findIndex(x=>x.k===v.k); if(i>=0) day=i; } }catch(e){}
+  $("sunCard").hidden = realDayIdx()>=0;
+}
+function busy(){ return playing || wallOn || kegelIdx>=0; }
+let hiddenAt=0;
+document.addEventListener("visibilitychange",()=>{
+  if(document.hidden){ hiddenAt=Date.now(); return; }
+  if(busy()) return;
+  // gün değiştiyse ya da 30 dk'dan uzun süre kapalı kaldıysa bugüne dön
+  if(shownDate!==dstr(new Date()) || (hiddenAt && Date.now()-hiddenAt>30*60*1000)){ pickToday(); render(); updDoses(); showResumeHint(); }
+});
+setInterval(()=>{ if(!busy() && !document.hidden && shownDate!==dstr(new Date())){ pickToday(); render(); updDoses(); } },60000);
+pickToday();
 render(); initHist().then(()=>{ updDoses(); showResumeHint(); });
 </script>
 
