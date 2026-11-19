@@ -46,6 +46,15 @@ main{padding:14px max(16px,env(safe-area-inset-left,0px)) 175px;max-width:640px;
 h2{margin:0 0 2px;font-size:20px}
 .sub{color:var(--muted);margin:0}
 .rounds{color:var(--red);font-weight:700;margin:8px 0 0}
+.ayarbtn{margin-top:10px}
+.ayar{margin-top:10px;border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:var(--bg)}
+.ayrow{display:flex;align-items:center;gap:10px;padding:5px 0}
+.ayrow span{flex:1;font-weight:700}
+.ayrow b{min-width:70px;text-align:center;font-size:17px}
+.ayrow button{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:800 22px var(--font);cursor:pointer;touch-action:manipulation}
+.aytot{margin:8px 0;font-weight:700;color:var(--navy2)}
+.ayact{display:flex;gap:8px;justify-content:space-between}
+.ayok{background:var(--navy);color:#fff;border-color:var(--navy)}
 ol{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 li.ex{display:flex;gap:12px;align-items:center;padding:10px;border-radius:10px;border:1px solid var(--line);cursor:pointer}
 li.ex .n{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--bg)}
@@ -185,6 +194,14 @@ button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
     <h2 id="title"></h2>
     <p class="sub" id="subtitle"></p>
     <p class="rounds" id="rounds"></p>
+    <button class="btn sm ayarbtn" id="ayarBtn">⚙️ Süreleri kendim ayarla</button>
+    <div class="ayar" id="ayar" hidden>
+      <div class="ayrow"><span>Çalışma</span><button data-k="w" data-d="-5">−</button><b id="ayW"></b><button data-k="w" data-d="5">+</button></div>
+      <div class="ayrow"><span>Dinlenme</span><button data-k="r" data-d="-5">−</button><b id="ayR"></b><button data-k="r" data-d="5">+</button></div>
+      <div class="ayrow"><span>Tur</span><button data-k="t" data-d="-1">−</button><b id="ayT"></b><button data-k="t" data-d="1">+</button></div>
+      <p class="aytot" id="ayTot"></p>
+      <div class="ayact"><button class="btn sm" id="ayAuto">↺ Otomatik plana dön</button><button class="btn sm ayok" id="ayOk">Tamam</button></div>
+    </div>
   </section>
   <div class="gifwrap" id="gifwrap"><div class="cue" id="cue" hidden><b id="cueMain"></b><span id="cueSub"></span></div><div class="gif anim" id="anim" role="img" aria-label="Hareket animasyonu"><div id="animIn"></div></div><div class="ov" id="ov" hidden><span id="ovPhase">SÜRE</span><b id="ovClock">00:00</b></div><div class="lastb" id="lastBadge" hidden></div><button class="finish" id="finishBtn" hidden>⏭ Geç</button><div class="kegel" id="kegel" hidden>
     <h3 id="kegelTitle">Kegel</h3>
@@ -334,19 +351,29 @@ function renderTabs(){
   const sun=realDayIdx()<0;
   $("tabs").innerHTML=`${GUN[n.getDay()]}, ${n.getDate()} ${AYLAR[n.getMonth()]}<small>${sun?"Dinlenme günü · yarın: "+DAYS[day].sub:"Bugünün antrenmanı: "+DAYS[day].sub}</small>`;
 }
-function toursFor(d){ return 3; }
+// Kullanıcı ayarı (localStorage gobek-ayar): {w,r,t}; yoksa otomatik plan
+function ayar(){ try{ const v=JSON.parse(localStorage.getItem("gobek-ayar")||"null"); if(v&&v.w&&v.t!=null) return v; }catch(e){} return null; }
+function toursFor(d){ const a=ayar(); return a ? a.t : 3; }
 // Her hareket 1 dk, 3 tur (~20 dk). Kademe dinlenmeyle: 1–2. hafta 30 sn, 3–4. hafta 20 sn, 5. haftadan itibaren 15 sn.
 // Dinlenme: tur geçişlerinde; 1. ve 2. turda tur içinde dinlenme yok, 3. turdan itibaren 2 harekette bir.
-function workOf(){ return 60; }
-function restOf(){ const wk=kegelPlan().wk; return wk<=2?30:(wk<=4?20:15); }
+function workOf(){ const a=ayar(); return a ? a.w : 60; }
+function restOf(){ const a=ayar(); if(a) return a.r; const wk=kegelPlan().wk; return wk<=2?30:(wk<=4?20:15); }
 function ivOf(d){ return [workOf(), restOf()]; }
 function posture(e){ const n=e[0]; if(n.includes("🪑")) return "sandalye"; if(/otur-kalk|Duvar şınavı|Yerinde|Gölge boks|Ayakta|sandalye squat/i.test(n)) return "ayakta"; return "yer"; }
-function prepSec(d,from,to){ return posture(d.ex[from])===posture(d.ex[to]) ? 5 : 10; }
+function prepSec(d,from,to){ to=to%d.ex.length; return posture(d.ex[from])===posture(d.ex[to]) ? 5 : 10; }
 function restAfter(d,i,t){ const endT=i===d.ex.length-1; if(endT && t>=toursFor(d)) return 0; return (endT || (t>=3 && i%2===1)) ? restOf() : 0; }
 function workoutMin(d){ const n=toursFor(d), w=workOf(); let sec=0; for(let t=1;t<=n;t++) d.ex.forEach((_,i)=>{ const r=restAfter(d,i,t); sec+=w+r; if(!r && i<d.ex.length-1) sec+=prepSec(d,i,i+1); }); sec+=5; return Math.round(sec/60*2)/2; }
 function roundsText(d){ const n=toursFor(d), w=workOf(), r=restOf();
-  return `${n} tur · her hareket ${w} sn · turlar arası ${r} sn dinlenme (3. turdan itibaren 2 harekette bir de ${r} sn) · yaklaşık ${String(workoutMin(d)).replace(".",",")} dk · kademe: dinlenme 1–2. hafta 30 sn, 3–4. hafta 20 sn, 5. haftadan itibaren 15 sn`; }
-function updDoses(){ const d=DAYS[day]; $("rounds").textContent=roundsText(d); $("kegelDose").textContent = "Kegel: "+kegelDoseText(); $("wallDose").textContent = "Duvar: "+wallDoseText(); }
+  return `${n} tur · her hareket ${w} sn · `+(r ? `turlar arası ${r} sn dinlenme`+(n>=3?` (3. turdan itibaren 2 harekette bir de ${r} sn)`:"") : "dinlenmesiz")+` · yaklaşık ${String(workoutMin(d)).replace(".",",")} dk · `+(ayar() ? "⚙️ kendi ayarın" : "kademe: dinlenme 1–2. hafta 30 sn, 3–4. hafta 20 sn, 5. haftadan itibaren 15 sn"); }
+function ayarUI(){ const d=DAYS[day]; $("ayW").textContent=workOf()+" sn"; $("ayR").textContent=restOf()+" sn"; $("ayT").textContent=toursFor(d)+" tur";
+  $("ayTot").textContent=`Bugün: yaklaşık ${String(workoutMin(d)).replace(".",",")} dk`+(ayar()?" · kendi ayarın":" · otomatik plan");
+  $("ayarBtn").textContent = ayar() ? `⚙️ Kendi ayarın: ${workOf()} sn / ${restOf()} sn / ${toursFor(d)} tur` : "⚙️ Süreleri kendim ayarla"; }
+$("ayarBtn").onclick=()=>{ if(playing) return; $("ayar").hidden=!$("ayar").hidden; ayarUI(); };
+$("ayar").querySelectorAll("button[data-k]").forEach(b=>b.onclick=()=>{ if(playing) return; const d=DAYS[day], a=ayar()||{w:workOf(),r:restOf(),t:toursFor(d)}, k=b.dataset.k, lim={w:[15,180],r:[0,120],t:[1,8]}[k];
+  a[k]=Math.min(lim[1],Math.max(lim[0],a[k]+ +b.dataset.d)); try{ localStorage.setItem("gobek-ayar",JSON.stringify(a)); }catch(e){} updDoses(); });
+$("ayAuto").onclick=()=>{ try{ localStorage.removeItem("gobek-ayar"); }catch(e){} updDoses(); };
+$("ayOk").onclick=()=>{ $("ayar").hidden=true; };
+function updDoses(){ const d=DAYS[day]; $("rounds").textContent=roundsText(d); ayarUI(); $("kegelDose").textContent = "Kegel: "+kegelDoseText(); $("wallDose").textContent = "Duvar: "+wallDoseText(); }
 function renderPrep(){
   const k=dstr(new Date()), done=!!(hist[k]&&hist[k].prep), b=$("prepBtn");
   b.classList.toggle("on",done);
