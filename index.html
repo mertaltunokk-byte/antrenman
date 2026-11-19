@@ -681,8 +681,8 @@ function renderChain(){
   $("chainGrid").querySelectorAll("button[data-k]").forEach(b=>b.onclick=()=>{ chainSel=b.dataset.k; renderChain(); });
   const box=$("chainDetail"); box.hidden=!(chainSel&&hist[chainSel]); if(!box.hidden) box.innerHTML=detailHtml(chainSel);
 }
-const ODUL_N=6, ODUL_TXT="Tek bir öğün, bütün gün değil. Canın ne çekiyorsa normal bir tabak ye; oturarak, yavaş, ikinci tabak yok. Öncesinde ya da sonrasında öğün atlayıp telafi etme, sonraki öğünde normal düzenine dön.";
-// Her 6 antrenmanda bir (≈ haftada en fazla 1) tek öğünlük ödül yemeği; 100 güne sayılmaz
+const ODUL_N=10, ODUL_TXT="Tek bir öğün, bütün gün değil. Canın ne çekiyorsa normal bir tabak ye; oturarak, yavaş, ikinci tabak yok. Öncesinde ya da sonrasında öğün atlayıp telafi etme, sonraki öğünde normal düzenine dön.";
+// Her 10 antrenmanda bir (≈ 2 haftada 1) tek öğünlük ödül yemeği; 100 güne sayılmaz
 function renderOdul(){ const tot=Object.keys(hist).filter(isW).length, nxt=(Math.floor(tot/ODUL_N)+1)*ODUL_N, el=$("odulNote");
   if(tot>0 && tot%ODUL_N===0 && tot<=100) el.innerHTML=`🍽 <b>Ödül yemeğini hak ettin!</b> (${tot}. antrenman) ${ODUL_TXT} Sıradaki ödül: ${nxt}. gün.`;
   else el.innerHTML = nxt<=100 ? `🍽 Her ${ODUL_N} antrenmanda bir ödül yemeği. Sıradaki: ${nxt}. gün, ${nxt-tot} antrenman kaldı.` : "🍽 Bütün ödüller toplandı!"; }
