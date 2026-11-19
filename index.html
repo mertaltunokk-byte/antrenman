@@ -75,6 +75,9 @@ body.focus .radio select{padding:7px 10px;font-size:13px}
 body.focus .radio button{padding:7px 12px;font-size:13px;min-width:100px}
 body.focus #gifwrap{position:fixed;left:0;right:0;top:0;bottom:var(--fb,100px);z-index:5;background:var(--bg);padding:calc(env(safe-area-inset-top,0px) + 8px) 8px 8px;display:flex;flex-direction:column;margin:0}
 body.focus .cue{flex:none;margin:0 0 8px}
+html.focus,body.focus{overflow:hidden;overscroll-behavior:none;height:100%}
+body.focus main>*:not(#gifwrap){visibility:hidden}
+body.focus #gifwrap,body.focus footer.player{touch-action:manipulation;-webkit-user-select:none;user-select:none}
 body.focus .anim{flex:1;width:100%;max-width:none;aspect-ratio:auto;min-height:0;border-radius:12px}
 .cue.side{background:#f2a900;color:#1e1e22}
 .ov.rest{background:rgba(36,55,90,.94)}
@@ -555,13 +558,16 @@ async function endWall(done){
 $("finishBtn").onclick = ()=>$("nextBtn").onclick();
 // Ekranda görünen yönerge şeridi (animasyonun hemen üstünde)
 function syncCue(){ const c=$("cue"), t=$("phase").textContent, on=$("timer").classList.contains("on") && !$("timer").classList.contains("over") && (playing||wallOn||kegelIdx>=0);
-  const was=document.body.classList.contains("focus"); document.body.classList.toggle("focus", on);
+  const was=document.body.classList.contains("focus"); document.body.classList.toggle("focus", on); document.documentElement.classList.toggle("focus", on);
+  if(on && !was) window.scrollTo(0,0);
   if(on){ document.documentElement.style.setProperty("--fb", document.querySelector("footer.player").offsetHeight+"px"); }
   if(on!==was){ requestAnimationFrame(()=>{ layoutAnim(); placeOv(); }); }
   c.hidden=!on || !t; if(c.hidden){ placeOv(); return; }
   const [main,hedef]=t.split(" · hedef: "), tr=($("roundtxt").textContent.match(/^Tur \d+\/\d+/)||[""])[0], d=DAYS[day];
   $("cueMain").textContent=main; $("cueSub").textContent=[tr, playing&&!wallOn?`${cur+1}/${d.ex.length}. hareket`:"", hedef?"Hedef: "+hedef:""].filter(Boolean).join(" · ");
   c.classList.toggle("rest", /DİNLEN|HAZIRLAN/.test(t)); c.classList.toggle("side", /Taraf değiştir/.test(t)); placeOv(); }
+// Tam ekranda arka plan kaymasın (iOS lastik kaydırma dahil)
+document.addEventListener("touchmove",e=>{ if(document.body.classList.contains("focus") && !(e.target.closest && e.target.closest("select"))) e.preventDefault(); },{passive:false});
 function placeOv(){ const c=$("cue"); $("ov").style.top=(c.hidden?8:c.offsetTop+c.offsetHeight+8)+"px"; }
 new MutationObserver(syncCue).observe($("phase"),{childList:true,characterData:true,subtree:true});
 new MutationObserver(syncCue).observe($("roundtxt"),{childList:true,characterData:true,subtree:true});
