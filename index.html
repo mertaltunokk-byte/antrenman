@@ -69,6 +69,10 @@ li.ex.done b{text-decoration:line-through;opacity:.6}
 .cue b{display:block;font-size:17px;font-weight:800}
 .cue span{display:block;font-size:12.5px;font-weight:600;opacity:.9;margin-top:2px}
 .cue.rest{background:var(--navy2)}
+body.focus header, body.focus .radio, body.focus .now{display:none}
+body.focus #gifwrap{position:fixed;left:0;right:0;top:0;bottom:var(--fb,100px);z-index:5;background:var(--bg);padding:calc(env(safe-area-inset-top,0px) + 8px) 8px 8px;display:flex;flex-direction:column;margin:0}
+body.focus .cue{flex:none;margin:0 0 8px}
+body.focus .anim{flex:1;width:100%;max-width:none;aspect-ratio:auto;min-height:0;border-radius:12px}
 .cue.side{background:#f2a900;color:#1e1e22}
 .ov.rest{background:rgba(36,55,90,.94)}
 .kegel{position:absolute;inset:0;z-index:3;border-radius:12px;background:var(--card);border:2px solid #8e44ad;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:8px 12px;overflow:hidden;text-align:center}
@@ -187,7 +191,7 @@ button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
   <section class="card" id="listCard">
     <ol id="list"></ol>
     <p class="extra" id="extra"></p>
-    <p class="note">Süreli akış: her hareketin süresi dolunca bip çalar ve kendiliğinden sıradakine geçer. 1. ve 2. turda hareketler ara vermeden art arda yapılır, tur bitince dinlenilir. 3. turdan itibaren her 2 hareketten sonra da dinlenme var. Tutma hareketlerinde (plank gibi) zorlanırsan birkaç saniye bırakıp tekrar tut. Yazan tekrar sayısı o süre için hedef; yetişmezse sorun değil. Dinlenirken sıradaki hareketin animasyonu oynar.</p>
+    <p class="note">Süreli akış: her hareketin süresi dolunca bip çalar ve kendiliğinden sıradakine geçer. 1. ve 2. turda hareketler art arda yapılır (arada pozisyon almak için 5 sn "Hazırlan", yerden ayağa ya da sandalyeye geçerken 10 sn), tur bitince dinlenilir. 3. turdan itibaren her 2 hareketten sonra da dinlenme var. Tutma hareketlerinde (plank gibi) zorlanırsan birkaç saniye bırakıp tekrar tut. Yazan tekrar sayısı o süre için hedef; yetişmezse sorun değil. Dinlenirken sıradaki hareketin animasyonu oynar.</p>
     <div class="kegelinfo"><div><b>Son set bitince: Duvar oturuşu → Kegel</b><span id="wallDose"></span><span id="kegelDose"></span></div><button class="btn sm" id="kegelNow">Şimdi yap</button></div>
     <p class="note">Duvar oturuşu: tansiyonun yüksekse ya da ilaç kullanıyorsan önce doktoruna sor. Ayak bileğinde ağrı 10 üzerinden 3'ü geçerse bırak.</p>
     <p class="note">Isınma: 5 dk yerinde yürüyüş + eklem çevirme. Ayak bileğinde ağrı 10 üzerinden 3'ü geçerse o hareketi bırak.</p>
@@ -238,6 +242,13 @@ function layoutAnim(){
   const m=META[shownKey]; if(!m) return; const box=document.getElementById("anim"), el=document.getElementById("animIn");
   const W=box.clientWidth, H=box.clientHeight; if(!W||!H) return;
   const [a,b]=(m.ar||"392/322").split("/").map(Number), ar=a/b;
+  if(document.body.classList.contains("focus")){
+    // Tam ekran: üstteki yazı kısmını kırp (şerit zaten gösteriyor), figürü büyüt
+    const c = m.ar ? {s:1.1,t:0.21,b:0} : {s:1.38,t:0.33,b:0.09};
+    let w=W*c.s, h=w/ar; const vis=1-c.t-c.b; if(h*vis>H){ h=H/vis; w=h*ar; }
+    el.style.width=w+"px"; el.style.height=h+"px"; el.style.left=((W-w)/2)+"px"; el.style.top=((H-h*vis)/2 - h*c.t)+"px"; el.style.clipPath=`inset(${c.t*100}% 0 ${c.b*100}% 0)`; return;
+  }
+  el.style.clipPath="none";
   let w=W, h=W/ar; if(h>H){ h=H; w=H*ar; }
   el.style.width=w+"px"; el.style.height=h+"px"; el.style.left=((W-w)/2)+"px"; el.style.top=((H-h)/2)+"px";
 }
@@ -312,8 +323,10 @@ function toursFor(d){ return d.ex.length>=6 ? 4 : 5; }
 function workOf(){ return kegelPlan().wk<=2?40:45; }
 function restOf(){ const wk=kegelPlan().wk; return wk<=2?30:(wk<=4?20:15); }
 function ivOf(d){ return [workOf(), restOf()]; }
+function posture(e){ const n=e[0]; if(n.includes("🪑")) return "sandalye"; if(/otur-kalk|Duvar şınavı|Yerinde|Gölge boks|Ayakta|sandalye squat/i.test(n)) return "ayakta"; return "yer"; }
+function prepSec(d,from,to){ return posture(d.ex[from])===posture(d.ex[to]) ? 5 : 10; }
 function restAfter(d,i,t){ const endT=i===d.ex.length-1; if(endT && t>=toursFor(d)) return 0; return (endT || (t>=3 && i%2===1)) ? restOf() : 0; }
-function workoutMin(d){ const n=toursFor(d), w=workOf(); let sec=0; for(let t=1;t<=n;t++) d.ex.forEach((_,i)=>{ sec+=w+restAfter(d,i,t); }); return Math.round(sec/60*2)/2; }
+function workoutMin(d){ const n=toursFor(d), w=workOf(); let sec=0; for(let t=1;t<=n;t++) d.ex.forEach((_,i)=>{ const r=restAfter(d,i,t); sec+=w+r; if(!r && i<d.ex.length-1) sec+=prepSec(d,i,i+1); }); sec+=5; return Math.round(sec/60*2)/2; }
 function roundsText(d){ const n=toursFor(d), w=workOf(), r=restOf();
   return `${n} tur · her hareket ${w} sn · turlar arası ${r} sn dinlenme (3. turdan itibaren 2 harekette bir de ${r} sn) · yaklaşık ${String(workoutMin(d)).replace(".",",")} dk · kademe: 1–2. hafta 40 sn çalış / 30 sn dinlen, 3–4. hafta 45/20, 5. haftadan itibaren 45/15`; }
 function updDoses(){ const d=DAYS[day]; $("rounds").textContent=roundsText(d); $("kegelDose").textContent = "Kegel: "+kegelDoseText(); $("wallDose").textContent = "Duvar: "+wallDoseText(); }
@@ -385,6 +398,7 @@ function step(dir){
     else $("phase").textContent = newTour ? `Tur ${tour-1} bitti. Devam!` : "Tekrarları bitirince Sonraki'ye bas.";
   }
 }
+function startPrep(sec){ const d=DAYS[day]; ivPhase="prep"; ivLeft=sec; $("phase").textContent=`HAZIRLAN · sıradaki: ${d.ex[cur][0]} · pozisyonunu al`; setClock(fmt(ivLeft),"HAZIRLAN",true); }
 function workText(){ const d=DAYS[day], e=d.ex[cur]; $("phase").textContent=`ÇALIŞ · ${e[0]} · hedef: ${e[1]}`+(/taraf/.test(e[1])?" (yarısında taraf değiştir)":"")+(/sn tut|sn \/ taraf/.test(e[1])?" · zorlanırsan kısa bırak, tekrar tut":""); }
 function setClock(t,label,rest){ $("ovClock").textContent=t; $("ovPhase").textContent=label; $("ov").classList.toggle("rest",!!rest); }
 function startTimer(resume){
@@ -394,7 +408,7 @@ function startTimer(resume){
   t0=Date.now(); exSec=0; resting=false; showTimes(); $("list").querySelectorAll("li").forEach((l,i)=>l.classList.toggle("done", i<cur));
   $("timer").classList.add("on"); $("timer").classList.remove("over");
   workText(); if(resume) $("phase").textContent="Kaldığın yerden devam! "+$("phase").textContent;
-  if(ivOf(d)){ ivPhase="work"; ivLeft=ivOf(d)[0]; setClock(fmt(ivLeft),"ÇALIŞ",false); } else setClock("00:00","SÜRE",false);
+  startPrep(5);
   $("ov").hidden=false; $("finishBtn").hidden=false; $("finishBtn").textContent="✓ Bitir";
   clearInterval(tick);
   tick = setInterval(()=>{
@@ -404,13 +418,14 @@ function startTimer(resume){
       if(ivLeft<=3 && ivLeft>0) beep();
       if(ivLeft<=0){
         const lastOne = cur===d.ex.length-1 && tour>=toursFor(d);
-        if(ivPhase==="work" && !lastOne && !restAfter(d,cur,tour)){ ivPhase="work"; ivLeft=ivOf(d)[0]; beep(); step(1); workText(); setClock(fmt(ivLeft),"ÇALIŞ",false); return; }
+        if(ivPhase==="prep"){ ivPhase="work"; ivLeft=ivOf(d)[0]; beep(); workText(); setClock(fmt(ivLeft),"ÇALIŞ",false); return; }
+        if(ivPhase==="work" && !lastOne && !restAfter(d,cur,tour)){ const ps=prepSec(d,cur,cur+1); beep(); step(1); startPrep(ps); return; }
         if(ivPhase==="work" && !lastOne){ const endT=cur===d.ex.length-1, ni=endT?0:cur+1; ivPhase="rest"; ivLeft=restAfter(d,cur,tour);
           $("phase").textContent=(endT?`Tur ${tour} bitti! `:"")+`DİNLEN · sıradaki: ${d.ex[ni][0]}`; showAnim(akey(d,ni)); beep(); }
         else { ivPhase="work"; ivLeft=ivOf(d)[0]; beep(); if(step(1)) return; workText(); }
       } else if(ivPhase==="work" && /taraf/.test(d.ex[cur][1]) && ivLeft===Math.floor(ivOf(d)[0]/2)){ beep(); $("phase").textContent="↔ Taraf değiştir! · "+d.ex[cur][0];
       }
-      setClock(fmt(ivLeft), ivPhase==="work"?"ÇALIŞ":"DİNLEN", ivPhase!=="work");
+      setClock(fmt(ivLeft), ivPhase==="work"?"ÇALIŞ":(ivPhase==="prep"?"HAZIRLAN":"DİNLEN"), ivPhase!=="work");
     } else if(resting){
       restLeft--; setClock(fmt(Math.max(restLeft,0)),"DİNLEN",true);
       if(restLeft<=3 && restLeft>0) beep();
@@ -449,7 +464,7 @@ function stopAll(){
 $("startBtn").onclick = ()=>{ unlockAudio(); playing ? stopAll() : startAll(); };
 document.addEventListener("touchend",unlockAudio,{passive:true});
 document.addEventListener("click",unlockAudio);
-$("nextBtn").onclick = ()=>{ const d=DAYS[day]; if(step(1)) return; ivPhase="work";ivLeft=ivOf(d)[0];workText();setClock(fmt(ivLeft),"ÇALIŞ",false); };
+$("nextBtn").onclick = ()=>{ const d=DAYS[day]; if(playing && !wallOn && kegelIdx<0 && ivPhase==="prep"){ ivPhase="work"; ivLeft=ivOf(d)[0]; workText(); setClock(fmt(ivLeft),"ÇALIŞ",false); return; } if(step(1)) return; ivPhase="work";ivLeft=ivOf(d)[0];workText();setClock(fmt(ivLeft),"ÇALIŞ",false); };
 $("prevBtn").onclick = ()=>{ const d=DAYS[day]; if(step(-1)) return; if(playing&&!wallOn&&kegelIdx<0){ ivPhase="work"; ivLeft=ivOf(d)[0]; workText(); setClock(fmt(ivLeft),"ÇALIŞ",false); } };
 // ---------- Kegel (set bitiminde) ----------
 // Protokol: 5 sn tut / 5 sn bırak × 10 (1–2. hafta), 7 sn (3–4. hafta), 10 sn (5.+ hafta); 4. haftadan sonra sona 10 hızlı kasılma.
@@ -536,12 +551,15 @@ async function endWall(done){
 }
 $("finishBtn").onclick = ()=>$("nextBtn").onclick();
 // Ekranda görünen yönerge şeridi (animasyonun hemen üstünde)
-function syncCue(){ const c=$("cue"), t=$("phase").textContent, on=$("timer").classList.contains("on") && !$("timer").classList.contains("over") && (playing||wallOn);
+function syncCue(){ const c=$("cue"), t=$("phase").textContent, on=$("timer").classList.contains("on") && !$("timer").classList.contains("over") && (playing||wallOn||kegelIdx>=0);
+  const was=document.body.classList.contains("focus"); document.body.classList.toggle("focus", on);
+  if(on){ document.documentElement.style.setProperty("--fb", document.querySelector("footer.player").offsetHeight+"px"); }
+  if(on!==was){ requestAnimationFrame(()=>{ layoutAnim(); placeOv(); }); }
   c.hidden=!on || !t; if(c.hidden){ placeOv(); return; }
   const [main,hedef]=t.split(" · hedef: "), tr=($("roundtxt").textContent.match(/^Tur \d+\/\d+/)||[""])[0], d=DAYS[day];
   $("cueMain").textContent=main; $("cueSub").textContent=[tr, playing&&!wallOn?`${cur+1}/${d.ex.length}. hareket`:"", hedef?"Hedef: "+hedef:""].filter(Boolean).join(" · ");
   c.classList.toggle("rest", /DİNLEN|HAZIRLAN/.test(t)); c.classList.toggle("side", /Taraf değiştir/.test(t)); placeOv(); }
-function placeOv(){ const c=$("cue"); $("ov").style.top=(c.hidden?8:c.offsetHeight+16)+"px"; }
+function placeOv(){ const c=$("cue"); $("ov").style.top=(c.hidden?8:c.offsetTop+c.offsetHeight+8)+"px"; }
 new MutationObserver(syncCue).observe($("phase"),{childList:true,characterData:true,subtree:true});
 new MutationObserver(syncCue).observe($("roundtxt"),{childList:true,characterData:true,subtree:true});
 new MutationObserver(syncCue).observe($("timer"),{attributes:true,attributeFilter:["class"]});
