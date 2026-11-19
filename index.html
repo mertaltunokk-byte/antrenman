@@ -55,6 +55,11 @@ h2{margin:0 0 2px;font-size:20px}
 .aytot{margin:8px 0;font-weight:700;color:var(--navy2)}
 .ayact{display:flex;gap:8px;justify-content:space-between}
 .ayok{background:var(--navy);color:#fff;border-color:var(--navy)}
+.aypre{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:6px}
+.aypre button{border:1px solid var(--line);border-radius:12px;background:var(--card);color:var(--ink);padding:8px 2px;font:800 13px var(--font);cursor:pointer;touch-action:manipulation;display:flex;flex-direction:column;align-items:center;gap:2px}
+.aypre button small{font:600 11px var(--font);color:var(--muted)}
+.aypre button.on{background:var(--navy);border-color:var(--navy);color:#fff}
+.aypre button.on small{color:#dfe6f5}
 ol{list-style:none;margin:0;padding:0;display:grid;gap:8px}
 li.ex{display:flex;gap:12px;align-items:center;padding:10px;border-radius:10px;border:1px solid var(--line);cursor:pointer}
 li.ex .n{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--bg)}
@@ -200,6 +205,7 @@ button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
     <p class="rounds" id="rounds"></p>
     <button class="btn sm ayarbtn" id="ayarBtn">⚙️ Süreleri kendim ayarla</button>
     <div class="ayar" id="ayar" hidden>
+      <div class="aypre" id="ayPre"></div>
       <div class="ayrow"><span>Çalışma</span><button data-k="w" data-d="-5">−</button><b id="ayW"></b><button data-k="w" data-d="5">+</button></div>
       <div class="ayrow"><span>Dinlenme</span><button data-k="r" data-d="-5">−</button><b id="ayR"></b><button data-k="r" data-d="5">+</button></div>
       <div class="ayrow"><span>Tur</span><button data-k="t" data-d="-1">−</button><b id="ayT"></b><button data-k="t" data-d="1">+</button></div>
@@ -369,10 +375,15 @@ function prepSec(d,from,to){ to=to%d.ex.length; return posture(d.ex[from])===pos
 function restAfter(d,i,t){ const endT=i===d.ex.length-1; if(endT && t>=toursFor(d)) return 0; return (endT || (t>=3 && i%2===1)) ? restOf() : 0; }
 function workoutMin(d){ const n=toursFor(d), w=workOf(); let sec=0; for(let t=1;t<=n;t++) d.ex.forEach((_,i)=>{ const r=restAfter(d,i,t); sec+=w+r; if(!r && i<d.ex.length-1) sec+=prepSec(d,i,i+1); }); sec+=5; return Math.round(sec/60*2)/2; }
 function roundsText(d){ const n=toursFor(d), w=workOf(), r=restOf();
-  return `${n} tur · her hareket ${w} sn · `+(r ? `turlar arası ${r} sn dinlenme`+(n>=3?` (3. turdan itibaren 2 harekette bir de ${r} sn)`:"") : "dinlenmesiz")+` · yaklaşık ${String(workoutMin(d)).replace(".",",")} dk · `+(ayar() ? "⚙️ kendi ayarın" : "kademe: dinlenme 1–2. hafta 30 sn, 3–4. hafta 20 sn, 5. haftadan itibaren 15 sn"); }
-function ayarUI(){ const d=DAYS[day]; $("ayW").textContent=workOf()+" sn"; $("ayR").textContent=restOf()+" sn"; $("ayT").textContent=toursFor(d)+" tur";
-  $("ayTot").textContent=`Bugün: yaklaşık ${String(workoutMin(d)).replace(".",",")} dk`+(ayar()?" · kendi ayarın":" · otomatik plan");
-  $("ayarBtn").textContent = ayar() ? `⚙️ Kendi ayarın: ${workOf()} sn / ${restOf()} sn / ${toursFor(d)} tur` : "⚙️ Süreleri kendim ayarla"; }
+  return `${n} tur · her hareket ${w} sn · `+(r ? `turlar arası ${r} sn dinlenme`+(n>=3?` (3. turdan itibaren 2 harekette bir de ${r} sn)`:"") : "dinlenmesiz")+` · yaklaşık ${String(workoutMin(d)).replace(".",",")} dk · `+(ayar() ? "⚙️ "+(presetOf(ayar())?presetOf(ayar()).n:"kendi ayarın") : "kademe: dinlenme 1–2. hafta 30 sn, 3–4. hafta 20 sn, 5. haftadan itibaren 15 sn"); }
+const PRESETS=[{n:"Kolay",w:40,r:30,t:3},{n:"Normal",w:60,r:30,t:3},{n:"Zor",w:60,r:15,t:4},{n:"Hayvansı",w:60,r:10,t:5}];
+function presetOf(a){ return a ? PRESETS.find(x=>x.w===a.w&&x.r===a.r&&x.t===a.t) : null; }
+function presetMin(d,x){ const keep=localStorage.getItem("gobek-ayar"); try{ localStorage.setItem("gobek-ayar",JSON.stringify({w:x.w,r:x.r,t:x.t})); return workoutMin(d); } finally { try{ keep==null?localStorage.removeItem("gobek-ayar"):localStorage.setItem("gobek-ayar",keep); }catch(e){} } }
+function ayarUI(){ const d=DAYS[day], cp=presetOf(ayar());
+  $("ayPre").innerHTML=PRESETS.map((x,i)=>`<button data-p="${i}" class="${cp===x?"on":""}">${x.n}<small>${x.w}/${x.r} sn</small><small>${x.t} tur</small><small>~${String(presetMin(d,x)).replace(".",",")} dk</small></button>`).join("");
+  $("ayPre").querySelectorAll("button").forEach(b=>b.onclick=()=>{ if(playing) return; const x=PRESETS[+b.dataset.p]; try{ localStorage.setItem("gobek-ayar",JSON.stringify({w:x.w,r:x.r,t:x.t})); }catch(e){} updDoses(); }); $("ayW").textContent=workOf()+" sn"; $("ayR").textContent=restOf()+" sn"; $("ayT").textContent=toursFor(d)+" tur";
+  $("ayTot").textContent=`Bugün: yaklaşık ${String(workoutMin(d)).replace(".",",")} dk`+(ayar()?" · "+(cp?cp.n:"kendi ayarın"):" · otomatik plan");
+  $("ayarBtn").textContent = ayar() ? (cp ? `⚙️ ${cp.n}: ${workOf()} sn / ${restOf()} sn / ${toursFor(d)} tur` : `⚙️ Kendi ayarın: ${workOf()} sn / ${restOf()} sn / ${toursFor(d)} tur`) : "⚙️ Süreleri kendim ayarla"; }
 $("ayarBtn").onclick=()=>{ if(playing) return; $("ayar").hidden=!$("ayar").hidden; ayarUI(); };
 $("ayar").querySelectorAll("button[data-k]").forEach(b=>b.onclick=()=>{ if(playing) return; const d=DAYS[day], a=ayar()||{w:workOf(),r:restOf(),t:toursFor(d)}, k=b.dataset.k, lim={w:[15,180],r:[0,120],t:[1,8]}[k];
   a[k]=Math.min(lim[1],Math.max(lim[0],a[k]+ +b.dataset.d)); try{ localStorage.setItem("gobek-ayar",JSON.stringify(a)); }catch(e){} updDoses(); });
