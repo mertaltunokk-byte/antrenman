@@ -155,6 +155,11 @@ footer.player{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--
 .radio select{flex:1;min-width:0;border:1px solid var(--line);border-radius:12px;padding:10px;font:600 16px var(--font);background:var(--bg);color:var(--ink);-webkit-appearance:none;appearance:none}
 .radio button{flex:none;border:0;border-radius:12px;padding:10px 14px;font:800 14px var(--font);background:var(--navy);color:#fff;cursor:pointer;min-width:112px}
 .radio button.on{background:#2e7d4f}
+.radio button.fav{min-width:0;width:44px;padding:10px 0;font-size:22px;line-height:1;background:var(--bg);color:var(--muted);border:1px solid var(--line)}
+.radio button.fav.is{color:#f2a900;border-color:#f2a900}
+body.focus .radio button.fav{min-width:0;width:38px;padding:5px 0;font-size:19px}
+.radiofav{font-size:12px;color:var(--muted);margin:-4px 2px 8px}
+body.focus .radiofav{display:none}
 .radio button:disabled{opacity:.45}
 .sun{border-color:var(--ok);border-width:2px}
 .sun h2{color:var(--ok)}
@@ -230,7 +235,8 @@ button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
 </main>
 <video id="keepAwake" src="uyanik.mp4" muted playsinline loop preload="auto" style="position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:0;bottom:0"></video>
 <footer class="player">
-  <div class="radio"><select id="radioSel" aria-label="Radyo istasyonu"></select><button id="radioBtn">📻 Radyo aç</button></div>
+  <div class="radio"><select id="radioSel" aria-label="Radyo istasyonu"></select><button id="radioFav" class="fav" aria-label="Favori istasyon">☆</button><button id="radioBtn">📻 Radyo aç</button></div>
+  <p class="radiofav" id="radioFavNote"></p>
   <div class="pl">
     <button class="start" id="startBtn">▶ Antrenmanı başlat</button>
     <button class="skip reset" id="resetBtn">↺ Baştan al</button>
@@ -374,7 +380,9 @@ function markCur(){
   if(playing){ const d=DAYS[day]; $("roundtxt").textContent = `Tur ${tour}/${toursFor(d)} · ${cur+1}. hareket: ${d.ex[cur][0]} (${d.ex[cur][1]})`; }
 }
 
-function playRadio(){} function stopRadio(){}
+// Favori istasyon: Başlat'a basınca kendiliğinden çalar (aynı dokunuşta, iOS izin verir)
+function playRadio(){ try{ const f=store.get("gobek-radyo-fav"); if(!f || radioWant || !RADIOS.some(r=>r.id===f)) return; $("radioSel").value=f; store.set("gobek-radyo",f); favUI(); radioPlay(); }catch(e){} }
+function stopRadio(){}
 // ---------- Antrenman zamanlayıcı ----------
 const fmt = s => String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
 function audioCtx(){ try{ const c=beep.c||(beep.c=new (window.AudioContext||window.webkitAudioContext)()); if(c.state!=="running") c.resume(); return c; }catch(e){ return null; } }
@@ -714,11 +722,14 @@ radio.addEventListener("pause",()=>{ if(radioWant && !radio.error && radio.src) 
 { const grp={}; RADIOS.forEach(r=>{ const g=r.g||"Pop & Rap"; (grp[g]=grp[g]||[]).push(r); });
   $("radioSel").innerHTML=Object.entries(grp).map(([g,rs])=>`<optgroup label="${g}">`+rs.map(r=>`<option value="${r.id}">${r.n}</option>`).join("")+`</optgroup>`).join(""); }
 $("radioSel").value=store.get("gobek-radyo")||RADIOS[0].id; if(!$("radioSel").value) $("radioSel").value=RADIOS[0].id;
-$("radioSel").onchange=()=>{ store.set("gobek-radyo",$("radioSel").value); if(radioWant) radioPlay(); };
+function favUI(){ const f=store.get("gobek-radyo-fav"), is=!!f && f===$("radioSel").value, b=$("radioFav"); b.textContent=is?"★":"☆"; b.classList.toggle("is",is);
+  const r=RADIOS.find(x=>x.id===f); $("radioFavNote").textContent = r ? `★ ${r.n.split(" · ")[0]}: antrenmanı başlatınca kendiliğinden çalar. Kapatmak için yıldıza tekrar dokun.` : "☆ Bir istasyonu yıldızlarsan antrenmanı başlatınca kendiliğinden çalar."; }
+$("radioFav").onclick=()=>{ const v=$("radioSel").value; if(store.get("gobek-radyo-fav")===v) { try{ localStorage.removeItem("gobek-radyo-fav"); }catch(e){} } else store.set("gobek-radyo-fav",v); favUI(); };
+$("radioSel").onchange=()=>{ store.set("gobek-radyo",$("radioSel").value); favUI(); if(radioWant) radioPlay(); };
 $("radioBtn").onclick=()=>{ unlockAudio(); radioWant ? radioStop() : radioPlay(); };
 window.addEventListener("online",()=>radioUI(radioWant?"loading":"stopped"));
 window.addEventListener("offline",()=>{ if(!radioWant) radioUI("stopped"); });
-radioUI("stopped");
+radioUI("stopped"); favUI();
 // ---------- Yedek (ilerlemeyi taşıma) ----------
 function b64e(str){ return btoa(unescape(encodeURIComponent(str))); }
 function b64d(str){ return decodeURIComponent(escape(atob(str))); }
