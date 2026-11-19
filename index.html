@@ -328,10 +328,10 @@ function renderTabs(){
   const sun=realDayIdx()<0;
   $("tabs").innerHTML=`${GUN[n.getDay()]}, ${n.getDate()} ${AYLAR[n.getMonth()]}<small>${sun?"Dinlenme günü · yarın: "+DAYS[day].sub:"Bugünün antrenmanı: "+DAYS[day].sub}</small>`;
 }
-function toursFor(d){ return d.ex.length>=6 ? 4 : 5; }
-// ~20 dk sabit. Kademe yoğunlukla: 1–2. hafta 40 sn çalış / 30 sn dinlen, 3–4. hafta 45/20, 5. haftadan itibaren 45/15.
+function toursFor(d){ return 3; }
+// Her hareket 1 dk, 3 tur (~20 dk). Kademe dinlenmeyle: 1–2. hafta 30 sn, 3–4. hafta 20 sn, 5. haftadan itibaren 15 sn.
 // Dinlenme: tur geçişlerinde; 1. ve 2. turda tur içinde dinlenme yok, 3. turdan itibaren 2 harekette bir.
-function workOf(){ return kegelPlan().wk<=2?40:45; }
+function workOf(){ return 60; }
 function restOf(){ const wk=kegelPlan().wk; return wk<=2?30:(wk<=4?20:15); }
 function ivOf(d){ return [workOf(), restOf()]; }
 function posture(e){ const n=e[0]; if(n.includes("🪑")) return "sandalye"; if(/otur-kalk|Duvar şınavı|Yerinde|Gölge boks|Ayakta|sandalye squat/i.test(n)) return "ayakta"; return "yer"; }
@@ -339,7 +339,7 @@ function prepSec(d,from,to){ return posture(d.ex[from])===posture(d.ex[to]) ? 5 
 function restAfter(d,i,t){ const endT=i===d.ex.length-1; if(endT && t>=toursFor(d)) return 0; return (endT || (t>=3 && i%2===1)) ? restOf() : 0; }
 function workoutMin(d){ const n=toursFor(d), w=workOf(); let sec=0; for(let t=1;t<=n;t++) d.ex.forEach((_,i)=>{ const r=restAfter(d,i,t); sec+=w+r; if(!r && i<d.ex.length-1) sec+=prepSec(d,i,i+1); }); sec+=5; return Math.round(sec/60*2)/2; }
 function roundsText(d){ const n=toursFor(d), w=workOf(), r=restOf();
-  return `${n} tur · her hareket ${w} sn · turlar arası ${r} sn dinlenme (3. turdan itibaren 2 harekette bir de ${r} sn) · yaklaşık ${String(workoutMin(d)).replace(".",",")} dk · kademe: 1–2. hafta 40 sn çalış / 30 sn dinlen, 3–4. hafta 45/20, 5. haftadan itibaren 45/15`; }
+  return `${n} tur · her hareket ${w} sn · turlar arası ${r} sn dinlenme (3. turdan itibaren 2 harekette bir de ${r} sn) · yaklaşık ${String(workoutMin(d)).replace(".",",")} dk · kademe: dinlenme 1–2. hafta 30 sn, 3–4. hafta 20 sn, 5. haftadan itibaren 15 sn`; }
 function updDoses(){ const d=DAYS[day]; $("rounds").textContent=roundsText(d); $("kegelDose").textContent = "Kegel: "+kegelDoseText(); $("wallDose").textContent = "Duvar: "+wallDoseText(); }
 function renderPrep(){
   const k=dstr(new Date()), done=!!(hist[k]&&hist[k].prep), b=$("prepBtn");
