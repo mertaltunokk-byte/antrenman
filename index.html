@@ -69,7 +69,10 @@ li.ex.done b{text-decoration:line-through;opacity:.6}
 .cue b{display:block;font-size:17px;font-weight:800}
 .cue span{display:block;font-size:12.5px;font-weight:600;opacity:.9;margin-top:2px}
 .cue.rest{background:var(--navy2)}
-body.focus header, body.focus .radio, body.focus .now{display:none}
+body.focus header, body.focus .now{display:none}
+body.focus .radio{margin-bottom:6px}
+body.focus .radio select{padding:7px 10px;font-size:13px}
+body.focus .radio button{padding:7px 12px;font-size:13px;min-width:100px}
 body.focus #gifwrap{position:fixed;left:0;right:0;top:0;bottom:var(--fb,100px);z-index:5;background:var(--bg);padding:calc(env(safe-area-inset-top,0px) + 8px) 8px 8px;display:flex;flex-direction:column;margin:0}
 body.focus .cue{flex:none;margin:0 0 8px}
 body.focus .anim{flex:1;width:100%;max-width:none;aspect-ratio:auto;min-height:0;border-radius:12px}
