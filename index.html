@@ -406,7 +406,7 @@ function ayarUI(){ const d=DAYS[day], cp=presetOf(ayar());
   $("ayPre").querySelectorAll("button").forEach(b=>b.onclick=()=>{ if(playing) return; const x=PRESETS[+b.dataset.p]; try{ localStorage.setItem("gobek-ayar",JSON.stringify({w:x.w,r:x.r,t:x.t})); }catch(e){} updDoses(); }); $("ayW").textContent=workOf()+" sn"; $("ayR").textContent=restOf()+" sn"; $("ayT").textContent=toursFor(d)+" tur";
   { const rows=breakdown(d), T=rows.reduce((a,r)=>({wk:a.wk+r.wk,rs:a.rs+r.rs,pr:a.pr+r.pr}),{wk:0,rs:0,pr:0});
     $("ayBd").innerHTML=`<table><tr><th></th><th>Çalışma</th><th>Dinlenme</th><th>Hazırlan</th></tr>`+rows.map((r,i)=>`<tr><td>${i+1}. tur</td><td>${fmtD(r.wk)}</td><td>${fmtD(r.rs)}</td><td>${fmtD(r.pr)}</td></tr>`).join("")
-      +`<tr class="sum"><td>Toplam</td><td>${fmtD(T.wk)}</td><td>${fmtD(T.rs)}</td><td>${fmtD(T.pr)}</td></tr></table>Her tur ${d.ex.length} hareket × ${workOf()} sn. Dinlenme turun sonunda (son turda yok); 3. turdan itibaren 2 harekette bir de var. Hazırlan: hareketler arası pozisyon alma süresi. Toplam: ${fmtD(T.wk+T.rs+T.pr)}.`; }
+      +`<tr class="sum"><td>Toplam</td><td>${fmtD(T.wk)}</td><td>${fmtD(T.rs)}</td><td>${fmtD(T.pr)}</td></tr></table>Her tur ${d.ex.length} hareket × ${workOf()} sn. ${!restOf()||toursFor(d)<2?"Bu ayarda dinlenme yok.":(toursFor(d)>=3?"Dinlenme turun sonunda (son turda yok); 3. turdan itibaren 2 harekette bir de var.":"Dinlenme 1. turun sonunda.")} Hazırlan: hareketler arası pozisyon alma süresi. Toplam: ${fmtD(T.wk+T.rs+T.pr)}.<br>Son turdan sonra her zaman: duvar oturuşu ${fmtD(wallPlan().sec)} (+5 sn hazırlan) + Kegel ${fmtD(kegelSec())}. Hepsiyle birlikte: ${fmtD(T.wk+T.rs+T.pr+5+wallPlan().sec+kegelSec())}.`; }
   $("ayTot").textContent=`Bugün: yaklaşık ${String(workoutMin(d)).replace(".",",")} dk`+(ayar()?" · "+(cp?cp.n:"kendi ayarın"):" · otomatik plan");
   $("ayarBtn").textContent = ayar() ? (cp ? `⚙️ ${cp.n}: ${workOf()} sn / ${restOf()} sn / ${toursFor(d)} tur` : `⚙️ Kendi ayarın: ${workOf()} sn / ${restOf()} sn / ${toursFor(d)} tur`) : "⚙️ Süreleri kendim ayarla"; }
 $("ayarBtn").onclick=()=>{ if(playing) return; $("ayar").hidden=!$("ayar").hidden; ayarUI(); };
@@ -563,7 +563,8 @@ function kegelPlan(){
   const wk=Math.floor(n/6)+1;
   return {wk, hold: wk<=2?5:(wk<=4?7:10), reps:10, quick: wk>4?10:0};
 }
-function kegelDoseText(){ const k=kegelPlan(); return `${k.wk}. hafta · ${k.reps} × ${k.hold} sn sık / ${k.hold} sn bırak${k.quick?` + ${k.quick} hızlı`:""} · sırtüstü`; }
+function kegelSec(){ const k=kegelPlan(); return 5 + k.reps*k.hold*2 + k.quick*2; }
+function kegelDoseText(){ const k=kegelPlan(); return `kendi programı, ${k.wk}. hafta · ${k.reps} × ${k.hold} sn sık / ${k.hold} sn bırak${k.quick?` + ${k.quick} hızlı`:""} · sırtüstü`; }
 let kegelTimer=null, kegelSeq=[], kegelIdx=-1, kegelEnd=0;
 function startKegel(){
   const k=kegelPlan(); kegelSeq=[{w:"HAZIRLAN",s:5,c:"Sırtüstü uzan, dizleri bük"}];
@@ -608,9 +609,10 @@ $("kegelSkip").onclick=()=>endKegel(false);
 $("kegelNow").onclick=()=>{ if(playing) stopAll(); wDate=null; keepAwakeOn(); startWall(false); };
 // ---------- Duvar oturuşu (setlerden sonra, Kegel'den önce) ----------
 function wallPlan(){ const wk=kegelPlan().wk;
-  const sec = wk<=2?30 : wk===3?45 : wk===4?60 : wk<=6?75 : wk<=8?90 : wk<=10?105 : 120;
+  // Duvar oturuşu süresi etkin ayarın çalışma süresine eşit (en az 20, en fazla 120 sn); duruş haftaya göre: 5. haftadan itibaren derin
+  const sec = Math.max(20, Math.min(120, workOf()));
   return {wk, sec, deep: wk>=5}; }
-function wallDoseText(){ const w=wallPlan(); return `${w.sec} sn · ${w.deep?"dizler ~90°":"yarım iniş"}`; }
+function wallDoseText(){ const w=wallPlan(); return `${w.sec} sn (hareket süren kadar) · ${w.deep?"dizler ~90°":"yarım iniş"}`; }
 let wallOn=false, wallTimer=null, wallEnd=0, wallPrep=true, wallBeeped=-1;
 function startWall(fromSets){
   const w=wallPlan(); wallOn=true; wallPrep=true; wallEnd=Date.now()+5000; wallBeeped=-1;
