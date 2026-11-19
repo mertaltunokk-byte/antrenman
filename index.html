@@ -58,12 +58,18 @@ li.ex.done b{text-decoration:line-through;opacity:.6}
 .anim{aspect-ratio:360/390;max-width:100%;position:relative;overflow:hidden;background-color:#f4f1ec}
 #animIn{position:absolute;background-repeat:no-repeat;opacity:0}
 #animIn.on{opacity:1}
-.gifwrap{position:relative;scroll-margin-top:130px}
+.gifwrap{position:relative;scroll-margin-top:112px}
 .ov{position:absolute;top:8px;right:8px;background:rgba(229,57,53,.94);color:#fff;border-radius:12px;padding:6px 12px;text-align:center;font-variant-numeric:tabular-nums;box-shadow:0 2px 8px rgba(0,0,0,.25)}
 .ov b{display:block;font-size:32px;line-height:1.05;font-weight:800}
 .ov span{display:block;font-size:11px;font-weight:800;letter-spacing:.06em}
 .finish{position:absolute;right:8px;bottom:8px;border:0;border-radius:12px;padding:12px 18px;font:800 16px var(--font);background:#2e7d4f;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:pointer}
 .lastb{position:absolute;left:8px;bottom:8px;background:#f2a900;color:#1e1e22;border-radius:12px;padding:10px 14px;font:800 15px var(--font);box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.cue{background:var(--red);color:#fff;border-radius:12px;padding:8px 12px;margin-bottom:8px;line-height:1.25}
+.anim{width:min(100%,calc((100svh - 340px)*360/390));margin:0 auto}
+.cue b{display:block;font-size:17px;font-weight:800}
+.cue span{display:block;font-size:12.5px;font-weight:600;opacity:.9;margin-top:2px}
+.cue.rest{background:var(--navy2)}
+.cue.side{background:#f2a900;color:#1e1e22}
 .ov.rest{background:rgba(36,55,90,.94)}
 .kegel{position:absolute;inset:0;z-index:3;border-radius:12px;background:var(--card);border:2px solid #8e44ad;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:8px 12px;overflow:hidden;text-align:center}
 .kegel h3{margin:0;font-size:16px;color:#8e44ad}
@@ -163,7 +169,7 @@ button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
     <p class="sub" id="subtitle"></p>
     <p class="rounds" id="rounds"></p>
   </section>
-  <div class="gifwrap" id="gifwrap"><div class="gif anim" id="anim" role="img" aria-label="Hareket animasyonu"><div id="animIn"></div></div><div class="ov" id="ov" hidden><span id="ovPhase">SÜRE</span><b id="ovClock">00:00</b></div><div class="lastb" id="lastBadge" hidden></div><button class="finish" id="finishBtn" hidden>✓ Bitir</button><div class="kegel" id="kegel" hidden>
+  <div class="gifwrap" id="gifwrap"><div class="cue" id="cue" hidden><b id="cueMain"></b><span id="cueSub"></span></div><div class="gif anim" id="anim" role="img" aria-label="Hareket animasyonu"><div id="animIn"></div></div><div class="ov" id="ov" hidden><span id="ovPhase">SÜRE</span><b id="ovClock">00:00</b></div><div class="lastb" id="lastBadge" hidden></div><button class="finish" id="finishBtn" hidden>✓ Bitir</button><div class="kegel" id="kegel" hidden>
     <h3 id="kegelTitle">Kegel</h3>
     <div class="kc" id="kegelCircle"><div><span id="kegelWord">HAZIR</span><small id="kegelSec"></small></div></div>
     <div class="kt" id="kegelCount"></div>
@@ -529,6 +535,16 @@ async function endWall(done){
   animKey=null; showAnim(akey(DAYS[day],0)); startKegel();
 }
 $("finishBtn").onclick = ()=>$("nextBtn").onclick();
+// Ekranda görünen yönerge şeridi (animasyonun hemen üstünde)
+function syncCue(){ const c=$("cue"), t=$("phase").textContent, on=$("timer").classList.contains("on") && !$("timer").classList.contains("over") && (playing||wallOn);
+  c.hidden=!on || !t; if(c.hidden){ placeOv(); return; }
+  const [main,hedef]=t.split(" · hedef: "), tr=($("roundtxt").textContent.match(/^Tur \d+\/\d+/)||[""])[0], d=DAYS[day];
+  $("cueMain").textContent=main; $("cueSub").textContent=[tr, playing&&!wallOn?`${cur+1}/${d.ex.length}. hareket`:"", hedef?"Hedef: "+hedef:""].filter(Boolean).join(" · ");
+  c.classList.toggle("rest", /DİNLEN|HAZIRLAN/.test(t)); c.classList.toggle("side", /Taraf değiştir/.test(t)); placeOv(); }
+function placeOv(){ const c=$("cue"); $("ov").style.top=(c.hidden?8:c.offsetHeight+16)+"px"; }
+new MutationObserver(syncCue).observe($("phase"),{childList:true,characterData:true,subtree:true});
+new MutationObserver(syncCue).observe($("roundtxt"),{childList:true,characterData:true,subtree:true});
+new MutationObserver(syncCue).observe($("timer"),{attributes:true,attributeFilter:["class"]});
 // ---------- Takvim (tamamlanan antrenmanlar) ----------
 let hist={}, histRef=null, calY, calM, calSel=null;
 const AYLAR=["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
