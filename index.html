@@ -676,16 +676,16 @@ function renderChain(){
   else if(!tot) m.textContent="İlk antrenmanını bitir, ilk halka eklensin.";
   else m.textContent = isW(today) ? `✓ Bugün işlendi. 100 güne ${100-tot} gün kaldı.` : `Bugünkü antrenmanı bitir, ${tot+1}. halka eklensin.`;
   let h=""; for(let i=0;i<100;i++){ const k=all[i];
-    h+=`<button class="${k?"on":""} ${i===tot&&!isW(today)?"next":""} ${(i+1)%25===0?"ms":""} ${(i+1)%ODUL_N===0?"rw":""} ${k&&k===chainSel?"sel":""}" ${k?`data-k="${k}"`:""} aria-label="${i+1}. gün${k?", tamamlandı":""}${(i+1)%ODUL_N===0?", ödül yemeği":""}">${(i+1)%ODUL_N===0?"🍽":i+1}</button>`; }
+    h+=`<button class="${k?"on":""} ${i===tot&&!isW(today)?"next":""} ${(i+1)%25===0?"ms":""} ${ODUL_DAYS.includes(i+1)?"rw":""} ${k&&k===chainSel?"sel":""}" ${k?`data-k="${k}"`:""} aria-label="${i+1}. gün${k?", tamamlandı":""}${ODUL_DAYS.includes(i+1)?", ödül yemeği":""}">${ODUL_DAYS.includes(i+1)?"🍽":i+1}</button>`; }
   $("chainGrid").innerHTML=h;
   $("chainGrid").querySelectorAll("button[data-k]").forEach(b=>b.onclick=()=>{ chainSel=b.dataset.k; renderChain(); });
   const box=$("chainDetail"); box.hidden=!(chainSel&&hist[chainSel]); if(!box.hidden) box.innerHTML=detailHtml(chainSel);
 }
-const ODUL_N=10, ODUL_TXT="Tek bir öğün, bütün gün değil. Canın ne çekiyorsa normal bir tabak ye; oturarak, yavaş, ikinci tabak yok. Öncesinde ya da sonrasında öğün atlayıp telafi etme, sonraki öğünde normal düzenine dön.";
-// Her 10 antrenmanda bir (≈ 2 haftada 1) tek öğünlük ödül yemeği; 100 güne sayılmaz
-function renderOdul(){ const tot=Object.keys(hist).filter(isW).length, nxt=(Math.floor(tot/ODUL_N)+1)*ODUL_N, el=$("odulNote");
-  if(tot>0 && tot%ODUL_N===0 && tot<=100) el.innerHTML=`🍽 <b>Ödül yemeğini hak ettin!</b> (${tot}. antrenman) ${ODUL_TXT} Sıradaki ödül: ${nxt}. gün.`;
-  else el.innerHTML = nxt<=100 ? `🍽 Her ${ODUL_N} antrenmanda bir ödül yemeği. Sıradaki: ${nxt}. gün, ${nxt-tot} antrenman kaldı.` : "🍽 Bütün ödüller toplandı!"; }
+const ODUL_DAYS=[30,60,90,100], ODUL_TXT="Tek bir öğün, bütün gün değil. Canın ne çekiyorsa normal bir tabak ye; oturarak, yavaş, ikinci tabak yok. Öncesinde ya da sonrasında öğün atlayıp telafi etme, sonraki öğünde normal düzenine dön.";
+// Ödül yemeği: 30, 60, 90 ve 100. antrenmanda tek öğün (kullanıcının seçtiği aralık); 100 güne sayılmaz
+function renderOdul(){ const tot=Object.keys(hist).filter(isW).length, nxt=ODUL_DAYS.find(x=>x>tot), el=$("odulNote");
+  if(ODUL_DAYS.includes(tot)) el.innerHTML=`🍽 <b>Ödül yemeğini hak ettin!</b> (${tot}. antrenman) ${ODUL_TXT}`+(nxt?` Sıradaki ödül: ${nxt}. gün.`:"");
+  else el.innerHTML = nxt ? `🍽 Ödül yemekleri 30, 60, 90 ve 100. günde. Sıradaki: ${nxt}. gün, ${nxt-tot} antrenman kaldı.` : "🍽 Bütün ödüller toplandı!"; }
 function renderCal(){
   renderChain(); renderOdul();
   if(calY==null){ const n=new Date(); calY=n.getFullYear(); calM=n.getMonth(); }
