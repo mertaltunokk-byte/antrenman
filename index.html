@@ -237,7 +237,7 @@ button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
   <section class="card" id="listCard">
     <ol id="list"></ol>
     <p class="extra" id="extra"></p>
-    <p class="note">Süreli akış: her hareketin süresi dolunca bip çalar ve kendiliğinden sıradakine geçer. 1. ve 2. turda hareketler art arda yapılır (arada pozisyon almak için 5 sn "Hazırlan", yerden ayağa ya da sandalyeye geçerken 10 sn), tur bitince dinlenilir. 3. turdan itibaren her 2 hareketten sonra da dinlenme var. Tutma hareketlerinde (plank gibi) zorlanırsan birkaç saniye bırakıp tekrar tut. Yazan tekrar sayısı o süre için hedef; yetişmezse sorun değil. Dinlenirken sıradaki hareketin animasyonu oynar.</p>
+    <p class="note" id="flowNote"></p>
     <div class="kegelinfo"><div><b>Son set bitince: Duvar oturuşu → Kegel</b><span id="wallDose"></span><span id="kegelDose"></span></div><button class="btn sm" id="kegelNow">Şimdi yap</button></div>
     <p class="note">Duvar oturuşu: tansiyonun yüksekse ya da ilaç kullanıyorsan önce doktoruna sor. Ayak bileğinde ağrı 10 üzerinden 3'ü geçerse bırak.</p>
     <p class="note">Isınma: 5 dk yerinde yürüyüş + eklem çevirme. Ayak bileğinde ağrı 10 üzerinden 3'ü geçerse o hareketi bırak.</p>
@@ -380,8 +380,21 @@ function posture(e){ const n=e[0]; if(n.includes("🪑")) return "sandalye"; if(
 function prepSec(d,from,to){ to=to%d.ex.length; return posture(d.ex[from])===posture(d.ex[to]) ? 5 : 10; }
 function restAfter(d,i,t){ const endT=i===d.ex.length-1; if(endT && t>=toursFor(d)) return 0; return (endT || (t>=3 && i%2===1)) ? restOf() : 0; }
 function workoutMin(d){ const n=toursFor(d), w=workOf(); let sec=0; for(let t=1;t<=n;t++) d.ex.forEach((_,i)=>{ const r=restAfter(d,i,t); sec+=w+r; if(!r && i<d.ex.length-1) sec+=prepSec(d,i,i+1); }); sec+=5; return Math.round(sec/60*2)/2; }
+// Ekrandaki tüm açıklamalar etkin ayardan (otomatik plan / Kolay·Normal·Zor·Hayvansı / kendi ayarın) üretilir
+function planLabel(){ const a=ayar(); if(!a) return `Otomatik plan · ${kegelPlan().wk}. hafta`; const cp=presetOf(a); return cp ? cp.n : "Kendi ayarın"; }
 function roundsText(d){ const n=toursFor(d), w=workOf(), r=restOf();
-  return `${n} tur · her hareket ${w} sn · `+(r ? `turlar arası ${r} sn dinlenme`+(n>=3?` (3. turdan itibaren 2 harekette bir de ${r} sn)`:"") : "dinlenmesiz")+` · yaklaşık ${String(workoutMin(d)).replace(".",",")} dk · `+(ayar() ? "⚙️ "+(presetOf(ayar())?presetOf(ayar()).n:"kendi ayarın") : "kademe: dinlenme 1–2. hafta 30 sn, 3–4. hafta 20 sn, 5. haftadan itibaren 15 sn"); }
+  return `${planLabel()} · ${n} tur × ${d.ex.length} hareket · ${w} sn çalış · `+(r && n>1 ? `${r} sn dinlen` : "dinlenmesiz")+` · yaklaşık ${String(workoutMin(d)).replace(".",",")} dk`+(ayar()?"":" · dinlenme haftaya göre kısalır: 1–2. hafta 30, 3–4. hafta 20, 5. haftadan itibaren 15 sn"); }
+function flowText(d){ const n=toursFor(d), w=workOf(), r=restOf();
+  const rest = !r || n<2 ? "Bu ayarda dinlenme yok." : n>=3 ? `Dinlenme ${r} sn: 1. ve 2. turda sadece tur sonunda, 3. turdan itibaren her 2 hareketten sonra da. Son turdan sonra dinlenme yok. Dinlenirken sıradaki hareketin animasyonu oynar.` : `Dinlenme ${r} sn, 1. turun sonunda; dinlenirken sıradaki hareketin animasyonu oynar.`;
+  return `Süreli akış: her hareket ${w} sn. Süre dolunca bip çalar ve kendiliğinden sıradakine geçer. Hareketler arasında pozisyon almak için 5 sn "Hazırlan" var; yer, ayakta ve sandalye arasında geçerken 10 sn. ${rest} Tutma hareketlerinde (plank gibi) zorlanırsan birkaç saniye bırakıp tekrar tut.`; }
+// Hareket yazısı: sabit tekrar sayısı yerine süre + nasıl yapılacağı
+function cueOf(e){ const t=e[1], q=t.includes(" · ")?t.split(" · ").slice(1).join(" · "):(/^(yavaş|kontrollü|rahat tempo|konuşabileceğin tempo|yavaş, tepede 1 sn)$/.test(t)?t:""), parts=[];
+  if(/8 sn tut \/ 2 sn bırak/.test(t)) parts.push("8 sn tut / 2 sn bırak");
+  else if(/\btut\b|sn \/ taraf/.test(t)) parts.push("pozisyonu tut");
+  else if(/× 2 sn/.test(t)) parts.push("her tekrarda tepede 2 sn");
+  else if(/tekrar/.test(t)) parts.push("düzgün formla tekrarla");
+  if(q) parts.push(q); return parts.join(" · ") || "tempoyu koru"; }
+function exTxt(e){ return `${workOf()} sn · ${cueOf(e)}`+(/taraf/.test(e[1])?" · yarısında taraf değiştir":""); }
 const PRESETS=[{n:"Kolay",w:40,r:30,t:3},{n:"Normal",w:60,r:30,t:3},{n:"Zor",w:60,r:15,t:4},{n:"Hayvansı",w:60,r:10,t:5}];
 function presetOf(a){ return a ? PRESETS.find(x=>x.w===a.w&&x.r===a.r&&x.t===a.t) : null; }
 function presetMin(d,x){ const keep=localStorage.getItem("gobek-ayar"); try{ localStorage.setItem("gobek-ayar",JSON.stringify({w:x.w,r:x.r,t:x.t})); return workoutMin(d); } finally { try{ keep==null?localStorage.removeItem("gobek-ayar"):localStorage.setItem("gobek-ayar",keep); }catch(e){} } }
@@ -401,7 +414,7 @@ $("ayar").querySelectorAll("button[data-k]").forEach(b=>b.onclick=()=>{ if(playi
   a[k]=Math.min(lim[1],Math.max(lim[0],a[k]+ +b.dataset.d)); try{ localStorage.setItem("gobek-ayar",JSON.stringify(a)); }catch(e){} updDoses(); });
 $("ayAuto").onclick=()=>{ try{ localStorage.removeItem("gobek-ayar"); }catch(e){} updDoses(); };
 $("ayOk").onclick=()=>{ $("ayar").hidden=true; };
-function updDoses(){ const d=DAYS[day]; $("rounds").textContent=roundsText(d); ayarUI(); $("kegelDose").textContent = "Kegel: "+kegelDoseText(); $("wallDose").textContent = "Duvar: "+wallDoseText(); }
+function updDoses(){ const d=DAYS[day]; $("rounds").textContent=roundsText(d); $("flowNote").textContent=flowText(d); if(!playing) $("list").querySelectorAll("li").forEach((li,i)=>{ const sp=li.querySelector("span"); if(sp) sp.textContent=exTxt(d.ex[i]); }); ayarUI(); $("kegelDose").textContent = "Kegel: "+kegelDoseText(); $("wallDose").textContent = "Duvar: "+wallDoseText(); }
 function renderPrep(){
   const k=dstr(new Date()), done=!!(hist[k]&&hist[k].prep), b=$("prepBtn");
   b.classList.toggle("on",done);
@@ -424,7 +437,7 @@ function render(){
   $("prepCard").hidden = d.k!=="cumartesi"; if(d.k==="cumartesi") renderPrep();
   $("title").textContent = d.name; $("subtitle").textContent = d.sub; updDoses();
   showAnim(akey(d,0)); preload(d); $("extra").textContent = d.extra;
-  $("list").innerHTML = d.ex.map((e,i)=>`<li class="ex" data-i="${i}"><div class="n">${i+1}</div><div class="t"><b>${e[0]}</b><span>${e[1]}</span></div></li>`).join("");
+  $("list").innerHTML = d.ex.map((e,i)=>`<li class="ex" data-i="${i}"><div class="n">${i+1}</div><div class="t"><b>${e[0]}</b><span>${exTxt(e)}</span></div></li>`).join("");
   $("list").querySelectorAll("li").forEach(li=>li.onclick=()=>{ if(playing) li.classList.toggle("done"); else { showAnim(akey(d,+li.dataset.i)); $("list").querySelectorAll("li").forEach(x=>x.classList.toggle("cur",x===li)); } });
   markCur(); showResumeHint();
 }
@@ -432,7 +445,7 @@ function markCur(){
   $("list").querySelectorAll("li").forEach((li,i)=>li.classList.toggle("cur", playing && i===cur));
   if(playing) showAnim(akey(DAYS[day],cur));
   { const d=DAYS[day], last=playing && cur===d.ex.length-1, b=$("lastBadge"); b.hidden=!last; if(last) b.textContent = tour>=toursFor(d) ? "🏁 Son hareket · Son tur!" : `🏁 Son hareket · ${tour}. tur`; }
-  if(playing){ const d=DAYS[day]; $("roundtxt").textContent = `Tur ${tour}/${toursFor(d)} · ${cur+1}. hareket: ${d.ex[cur][0]} (${d.ex[cur][1]})`; }
+  if(playing){ const d=DAYS[day]; $("roundtxt").textContent = `Tur ${tour}/${toursFor(d)} · ${cur+1}. hareket: ${d.ex[cur][0]} (${exTxt(d.ex[cur])})`; }
 }
 
 // Favori istasyon: Başlat'a basınca kendiliğinden çalar (aynı dokunuşta, iOS izin verir)
@@ -444,7 +457,7 @@ function audioCtx(){ try{ const c=beep.c||(beep.c=new (window.AudioContext||wind
 function unlockAudio(){ const c=audioCtx(); if(!c) return; try{ const o=c.createOscillator(),g=c.createGain(); g.gain.value=0; o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+.01); }catch(e){} }
 function beep(){ try{ const c=audioCtx(); if(!c) return; const o=c.createOscillator(),g=c.createGain(); o.frequency.value=880; g.gain.value=.15; o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+.18);}catch(e){} if(navigator.vibrate) navigator.vibrate(150); }
 let exSec=0, times={};
-function showTimes(){ const d=DAYS[day]; $("list").querySelectorAll("li").forEach((li,i)=>{ const t=times[i]; li.querySelector("span").textContent = d.ex[i][1] + (t ? " · ⏱ " + t.map((x,j)=>x==null?null:`${j+1}. set: ${x} sn`).filter(Boolean).join(", ") : ""); }); }
+function showTimes(){ const d=DAYS[day]; $("list").querySelectorAll("li").forEach((li,i)=>{ const t=times[i]; li.querySelector("span").textContent = exTxt(d.ex[i]) + (t ? " · ⏱ " + t.map((x,j)=>x==null?null:`${j+1}. set: ${x} sn`).filter(Boolean).join(", ") : ""); }); }
 let resting=false, restLeft=0;
 function startRest(sec,msg){ if(!sec) { resting=false; return; } resting=true; restLeft=sec; setClock(fmt(sec),"DİNLEN",true); $("phase").textContent=msg+` ${sec} sn dinlen (Sonraki ile atlayabilirsin).`; }
 function endRest(){ resting=false; exSec=0; setClock("00:00","SÜRE",false); $("phase").textContent="Başla! Tekrarları bitirince Sonraki'ye bas."; beep(); }
@@ -473,7 +486,7 @@ function step(dir){
   }
 }
 function startPrep(sec){ const d=DAYS[day]; ivPhase="prep"; ivLeft=sec; $("phase").textContent=`HAZIRLAN · sıradaki: ${d.ex[cur][0]} · pozisyonunu al`; setClock(fmt(ivLeft),"HAZIRLAN",true); }
-function workText(){ const d=DAYS[day], e=d.ex[cur]; $("phase").textContent=`ÇALIŞ · ${e[0]} · hedef: ${e[1]}`+(/taraf/.test(e[1])?" (yarısında taraf değiştir)":"")+(/\btut\b|sn \/ taraf/.test(e[1])?" · zorlanırsan kısa bırak, tekrar tut":""); }
+function workText(){ const d=DAYS[day], e=d.ex[cur]; $("phase").textContent=`ÇALIŞ · ${e[0]} · hedef: ${cueOf(e)}`+(/taraf/.test(e[1])?" (yarısında taraf değiştir)":"")+(/\btut\b|sn \/ taraf/.test(e[1])?" · zorlanırsan kısa bırak, tekrar tut":""); }
 function setClock(t,label,rest){ $("ovClock").textContent=t; $("ovPhase").textContent=label; $("ov").classList.toggle("rest",!!rest); }
 function startTimer(resume){
   const d=DAYS[day];
@@ -498,7 +511,7 @@ function startTimer(resume){
         if(ivPhase==="work" && !lastOne){ const endT=cur===d.ex.length-1, ni=endT?0:cur+1; ivPhase="rest"; ivLeft=restAfter(d,cur,tour);
           $("phase").textContent=(endT?`Tur ${tour} bitti! `:"")+`DİNLEN · sıradaki: ${d.ex[ni][0]}`; showAnim(akey(d,ni)); $("lastBadge").hidden=true; saveProgress(ni, endT?tour+1:tour); beep(); }
         else { ivPhase="work"; ivLeft=ivOf(d)[0]; beep(); if(step(1)) return; workText(); }
-      } else if(ivPhase==="work" && /taraf/.test(d.ex[cur][1]) && ivLeft===Math.floor(ivOf(d)[0]/2)){ beep(); $("phase").textContent="↔ Taraf değiştir! · "+d.ex[cur][0]+" · hedef: "+d.ex[cur][1];
+      } else if(ivPhase==="work" && /taraf/.test(d.ex[cur][1]) && ivLeft===Math.floor(ivOf(d)[0]/2)){ beep(); $("phase").textContent="↔ Taraf değiştir! · "+d.ex[cur][0]+" · hedef: "+cueOf(d.ex[cur]);
       }
       setClock(fmt(ivLeft), ivPhase==="work"?"ÇALIŞ":(ivPhase==="prep"?"HAZIRLAN":"DİNLEN"), ivPhase!=="work");
     } else if(resting){
