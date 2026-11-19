@@ -181,7 +181,7 @@ button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
   <section class="card" id="listCard">
     <ol id="list"></ol>
     <p class="extra" id="extra"></p>
-    <p class="note">Süreli akış: her hareketin süresi dolunca bip çalar ve kendiliğinden sıradakine geçer. 1. ve 2. turda hareketler ara vermeden art arda yapılır, tur bitince 30 sn dinlenilir. 3. turdan itibaren her 2 hareketten sonra da 30 sn dinlenme var. Yazan tekrar sayısı o süre için hedef; yetişmezse sorun değil. Dinlenirken sıradaki hareketin animasyonu oynar.</p>
+    <p class="note">Süreli akış: her hareketin süresi dolunca bip çalar ve kendiliğinden sıradakine geçer. 1. ve 2. turda hareketler ara vermeden art arda yapılır, tur bitince dinlenilir. 3. turdan itibaren her 2 hareketten sonra da dinlenme var. Tutma hareketlerinde (plank gibi) zorlanırsan birkaç saniye bırakıp tekrar tut. Yazan tekrar sayısı o süre için hedef; yetişmezse sorun değil. Dinlenirken sıradaki hareketin animasyonu oynar.</p>
     <div class="kegelinfo"><div><b>Son set bitince: Duvar oturuşu → Kegel</b><span id="wallDose"></span><span id="kegelDose"></span></div><button class="btn sm" id="kegelNow">Şimdi yap</button></div>
     <p class="note">Duvar oturuşu: tansiyonun yüksekse ya da ilaç kullanıyorsan önce doktoruna sor. Ayak bileğinde ağrı 10 üzerinden 3'ü geçerse bırak.</p>
     <p class="note">Isınma: 5 dk yerinde yürüyüş + eklem çevirme. Ayak bileğinde ağrı 10 üzerinden 3'ü geçerse o hareketi bırak.</p>
@@ -300,15 +300,16 @@ function renderTabs(){
   const sun=realDayIdx()<0;
   $("tabs").innerHTML=`${GUN[n.getDay()]}, ${n.getDate()} ${AYLAR[n.getMonth()]}<small>${sun?"Dinlenme günü · yarın: "+DAYS[day].sub:"Bugünün antrenmanı: "+DAYS[day].sub}</small>`;
 }
-function toursFor(d){ const wk=kegelPlan().wk; if(wk<=2) return 2; if(d.toursLate && wk>=5) return d.toursLate; return d.tours; }
-// Kademe: 1–2. hafta 30 sn, 3–4. hafta 40 sn, 5. haftadan itibaren 45 sn çalışma. Dinlenme: tur geçişlerinde 30 sn; 1. ve 2. turda tur içinde dinlenme yok, 3. turdan itibaren 2 harekette bir 30 sn.
-const REST=30;
-function workOf(){ const wk=kegelPlan().wk; return wk<=2?30:(wk<=4?40:45); }
-function ivOf(d){ return [workOf(), REST]; }
-function restAfter(d,i,t){ const endT=i===d.ex.length-1; if(endT && t>=toursFor(d)) return 0; return (endT || (t>=3 && i%2===1)) ? REST : 0; }
+function toursFor(d){ return d.ex.length>=6 ? 4 : 5; }
+// ~20 dk sabit. Kademe yoğunlukla: 1–2. hafta 40 sn çalış / 30 sn dinlen, 3–4. hafta 45/20, 5. haftadan itibaren 45/15.
+// Dinlenme: tur geçişlerinde; 1. ve 2. turda tur içinde dinlenme yok, 3. turdan itibaren 2 harekette bir.
+function workOf(){ return kegelPlan().wk<=2?40:45; }
+function restOf(){ const wk=kegelPlan().wk; return wk<=2?30:(wk<=4?20:15); }
+function ivOf(d){ return [workOf(), restOf()]; }
+function restAfter(d,i,t){ const endT=i===d.ex.length-1; if(endT && t>=toursFor(d)) return 0; return (endT || (t>=3 && i%2===1)) ? restOf() : 0; }
 function workoutMin(d){ const n=toursFor(d), w=workOf(); let sec=0; for(let t=1;t<=n;t++) d.ex.forEach((_,i)=>{ sec+=w+restAfter(d,i,t); }); return Math.round(sec/60*2)/2; }
-function roundsText(d){ const wk=kegelPlan().wk, n=toursFor(d), w=workOf();
-  return `${n} tur · her hareket ${w} sn · turlar arası ${REST} sn dinlenme${n>=3?` (3. turda 2 harekette bir de ${REST} sn)`:""} · yaklaşık ${String(workoutMin(d)).replace(".",",")} dk · çalışma süresi: 1–2. hafta 30 sn, 3–4. hafta 40 sn, 5. haftadan itibaren 45 sn` + (wk<=2 ? ` · ilk 2 hafta 2 tur, sonra ${d.tours} tur` : (d.toursLate&&wk<5 ? ` · 5. haftadan itibaren ${d.toursLate} tur` : "")); }
+function roundsText(d){ const n=toursFor(d), w=workOf(), r=restOf();
+  return `${n} tur · her hareket ${w} sn · turlar arası ${r} sn dinlenme (3. turdan itibaren 2 harekette bir de ${r} sn) · yaklaşık ${String(workoutMin(d)).replace(".",",")} dk · kademe: 1–2. hafta 40 sn çalış / 30 sn dinlen, 3–4. hafta 45/20, 5. haftadan itibaren 45/15`; }
 function updDoses(){ const d=DAYS[day]; $("rounds").textContent=roundsText(d); $("kegelDose").textContent = "Kegel: "+kegelDoseText(); $("wallDose").textContent = "Duvar: "+wallDoseText(); }
 function renderPrep(){
   const k=dstr(new Date()), done=!!(hist[k]&&hist[k].prep), b=$("prepBtn");
@@ -378,7 +379,7 @@ function step(dir){
     else $("phase").textContent = newTour ? `Tur ${tour-1} bitti. Devam!` : "Tekrarları bitirince Sonraki'ye bas.";
   }
 }
-function workText(){ const d=DAYS[day], e=d.ex[cur]; $("phase").textContent=`ÇALIŞ · ${e[0]} · hedef: ${e[1]}`+(/taraf/.test(e[1])?" (yarısında taraf değiştir)":""); }
+function workText(){ const d=DAYS[day], e=d.ex[cur]; $("phase").textContent=`ÇALIŞ · ${e[0]} · hedef: ${e[1]}`+(/taraf/.test(e[1])?" (yarısında taraf değiştir)":"")+(/sn tut|sn \/ taraf/.test(e[1])?" · zorlanırsan kısa bırak, tekrar tut":""); }
 function setClock(t,label,rest){ $("ovClock").textContent=t; $("ovPhase").textContent=label; $("ov").classList.toggle("rest",!!rest); }
 function startTimer(resume){
   const d=DAYS[day];
