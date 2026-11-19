@@ -1,0 +1,630 @@
+<!doctype html><html lang="tr"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Göbek Antrenmanı</title>
+<meta name="theme-color" content="#24375a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Antrenman">
+<meta name="format-detection" content="telephone=no">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" type="image/png" href="icon-192.png">
+<style>[hidden]:not([hidden=until-found i]){display:none!important}img{max-width:100%}</style>
+</head><body>
+<style>
+:root{
+  /* Mobil tek sütun: üstte gün sekmeleri, altta sabit Başlat çubuğu */
+  --bg:#f4f1ec; --card:#ffffff; --ink:#1e1e22; --muted:#5f6069; --navy:#24375a; --navy2:#3b5385;
+  --red:#e53935; --line:#e2ddd4; --ok:#2e7d4f;
+  --font:"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#15171c; --card:#1f232b; --ink:#eceef2; --muted:#a3a8b4; --navy:#2c4372; --navy2:#4a66a0; --line:#2f3440; --ok:#5cc28a;
+  color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#15171c; --card:#1f232b; --ink:#eceef2; --muted:#a3a8b4; --navy:#2c4372; --navy2:#4a66a0; --line:#2f3440; --ok:#5cc28a;
+  color-scheme:dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+button{touch-action:manipulation;-webkit-user-select:none;user-select:none}
+.backup textarea{width:100%;min-height:70px;font:12px ui-monospace,monospace;border:1px solid var(--line);border-radius:10px;padding:8px;background:var(--bg);color:var(--ink)}
+.backup .row{justify-content:flex-start}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--font);font-size:15px}
+header{position:sticky;top:0;z-index:5;background:var(--navy);color:#fff;padding:env(safe-area-inset-top,0) 0 0}
+.htop{display:flex;justify-content:space-between;align-items:center;padding:12px max(16px,env(safe-area-inset-left,0px)) 6px}
+.htop h1{font-size:18px;margin:0}
+.htop small{opacity:.75}
+nav{display:grid;grid-template-columns:repeat(6,1fr);gap:4px;padding:6px max(10px,env(safe-area-inset-left,0px)) 10px}
+nav button{border:0;border-radius:10px;padding:10px 2px;font:600 13px var(--font);background:rgba(255,255,255,.1);color:#dfe6f3;cursor:pointer}
+nav button[aria-selected="true"]{background:#fff;color:var(--navy)}
+nav button .today{display:block;font-size:10px;font-weight:500;opacity:.8}
+main{padding:14px max(16px,env(safe-area-inset-left,0px)) 120px;max-width:640px;margin:0 auto;display:grid;gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.gif{width:100%;border-radius:12px;display:block;background:#f4f1ec}
+h2{margin:0 0 2px;font-size:20px}
+.sub{color:var(--muted);margin:0}
+.rounds{color:var(--red);font-weight:700;margin:8px 0 0}
+ol{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+li.ex{display:flex;gap:12px;align-items:center;padding:10px;border-radius:10px;border:1px solid var(--line);cursor:pointer}
+li.ex .n{flex:none;width:28px;height:28px;border-radius:50%;display:grid;place-items:center;font-weight:700;background:var(--bg)}
+li.ex .t{flex:1;min-width:0}
+li.ex b{display:block}
+li.ex span{color:var(--muted);font-size:13px}
+li.ex.cur{border-color:var(--navy2);box-shadow:0 0 0 2px var(--navy2) inset}
+li.ex.done .n{background:var(--ok);color:#fff}
+li.ex.done b{text-decoration:line-through;opacity:.6}
+.anim{aspect-ratio:360/390;max-width:100%;position:relative;overflow:hidden;background-color:#f4f1ec}
+#animIn{position:absolute;background-repeat:no-repeat;opacity:0}
+#animIn.on{opacity:1}
+.gifwrap{position:relative;scroll-margin-top:130px}
+.ov{position:absolute;top:8px;right:8px;background:rgba(229,57,53,.94);color:#fff;border-radius:12px;padding:6px 12px;text-align:center;font-variant-numeric:tabular-nums;box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.ov b{display:block;font-size:32px;line-height:1.05;font-weight:800}
+.ov span{display:block;font-size:11px;font-weight:800;letter-spacing:.06em}
+.finish{position:absolute;right:8px;bottom:8px;border:0;border-radius:12px;padding:12px 18px;font:800 16px var(--font);background:#2e7d4f;color:#fff;box-shadow:0 2px 8px rgba(0,0,0,.25);cursor:pointer}
+.lastb{position:absolute;left:8px;bottom:8px;background:#f2a900;color:#1e1e22;border-radius:12px;padding:10px 14px;font:800 15px var(--font);box-shadow:0 2px 8px rgba(0,0,0,.25)}
+.ov.rest{background:rgba(36,55,90,.94)}
+.kegel{position:absolute;inset:0;z-index:3;border-radius:12px;background:var(--card);border:2px solid #8e44ad;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:5px;padding:8px 12px;overflow:hidden;text-align:center}
+.kegel h3{margin:0;font-size:16px;color:#8e44ad}
+.kegel .kc{flex:none;width:112px;height:112px;border-radius:50%;display:grid;place-items:center;background:#d9c3e6;color:#3d1f4f;font:900 26px var(--font);transform:scale(1);transition-property:transform,background-color;transition-timing-function:ease-in-out}
+.kegel .kc.sik{transform:scale(.62);background:#8e44ad;color:#fff}
+.kegel .kc small{display:block;font-size:13px;font-weight:700}
+.kegel .kt{font-size:14px;font-weight:700;min-height:20px}
+.kegel .kn{font-size:11.5px;color:var(--muted);max-width:420px;line-height:1.35}
+.kegel .krow{display:flex;gap:8px}
+.kegelinfo{margin-top:10px;padding:10px 12px;border-radius:10px;border:1px dashed #8e44ad;display:flex;gap:10px;align-items:center;justify-content:space-between}
+.kegelinfo b{color:#8e44ad}
+.kegelinfo span{display:block;font-size:13px;color:var(--muted)}
+.extra{font-weight:600}
+.timer{display:none;text-align:center}
+.timer.on{display:block}
+.timer.over .row{display:none}
+.big{font-size:44px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:1px}
+.phase{font-weight:700;color:var(--red);min-height:20px}
+.row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:8px}
+.btn{border:0;border-radius:12px;padding:12px 16px;font:700 15px var(--font);cursor:pointer;background:var(--bg);color:var(--ink);border:1px solid var(--line)}
+.note{font-size:12px;color:var(--muted)}
+footer.player{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--card);border-top:1px solid var(--line);
+  padding:10px max(16px,env(safe-area-inset-left,0px)) calc(10px + env(safe-area-inset-bottom,0px))}
+.pl{display:flex;gap:10px;align-items:center}
+.start{flex:1;border:0;border-radius:14px;padding:14px;font:800 17px var(--font);background:var(--red);color:#fff;cursor:pointer}
+.start.stop{background:var(--navy)}
+.skip{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:14px;padding:14px 12px;font:700 13px var(--font);cursor:pointer}
+.reset.confirm{background:var(--red);color:#fff;border-color:var(--red)}
+.calhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
+.calhead h2{font-size:18px;text-align:center;flex:1}
+.btn.sm{padding:8px 14px}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.calgrid .wd{font-size:11px;font-weight:700;color:var(--muted);padding:4px 0}
+.calgrid button{aspect-ratio:1;border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:10px;font:600 13px var(--font);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;padding:0;min-width:0}
+.calgrid button.today{border:2px solid var(--navy2)}
+.calgrid button.done{background:var(--ok);color:#fff;border-color:var(--ok)}
+.calgrid button.done::after{content:"✓";font-size:14px;line-height:1}
+.calgrid button.sel{outline:3px solid var(--red);outline-offset:1px}
+.caldetail{margin-top:10px;border-top:1px solid var(--line);padding-top:10px;font-size:14px}
+.caldetail ul{margin:6px 0 0;padding-left:18px}
+.chainhead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px}
+.eyebrow{font-size:11px;font-weight:800;letter-spacing:.1em;color:var(--muted)}
+.streak b{font-size:52px;font-weight:900;line-height:1;color:var(--ok);font-variant-numeric:tabular-nums}
+.streak span{font-size:18px;font-weight:700;color:var(--muted);margin-left:4px}
+.best{text-align:right;font-size:12px;color:var(--muted)}
+.best b{font-size:20px;color:var(--ink)}
+.chainbar{height:8px;border-radius:99px;background:var(--line);margin:10px 0 6px;overflow:hidden}
+.chainbar div{height:100%;background:var(--ok);border-radius:99px;width:0}
+.chainmsg{font-weight:700;margin:4px 0 10px}
+.chainmsg.broken{color:var(--red)}
+.chain{display:grid;grid-template-columns:repeat(10,1fr);gap:3px}
+.chain button{aspect-ratio:1;border:2px solid var(--line);background:var(--bg);color:var(--muted);border-radius:50%;font:700 9px var(--font);padding:0;min-width:0;cursor:pointer;position:relative}
+.chain button.on{background:var(--ok);border-color:var(--ok);color:#fff}
+.chain button.next{border-color:var(--ok);border-style:dashed;color:var(--ok)}
+.chain button.ms{box-shadow:0 0 0 2px #f2a900}
+.chain button.sel{outline:3px solid var(--red);outline-offset:1px}
+.calwrap{margin-top:12px}
+.calwrap summary{cursor:pointer;font-weight:700;padding:6px 0}
+.prepbtn{display:block;width:100%;margin-top:14px;border:2px solid var(--ok);border-radius:14px;padding:18px;font:800 18px var(--font);background:var(--card);color:var(--ok);cursor:pointer}
+.prepbtn.on{background:var(--ok);color:#fff}
+.prepbar{height:8px;border-radius:99px;background:var(--line);margin:10px 0 4px;overflow:hidden}
+.prepbar div{height:100%;background:var(--ok);width:0}
+.pgroup{margin-top:12px}
+.pgroup h3{font-size:13px;letter-spacing:.08em;color:var(--muted);margin:0 0 6px}
+.pitem{display:flex;gap:12px;align-items:center;width:100%;text-align:left;padding:12px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:600 14px var(--font);cursor:pointer;margin-bottom:6px}
+.pitem .box{flex:none;width:24px;height:24px;border-radius:7px;border:2px solid var(--line);display:grid;place-items:center;color:#fff;font-weight:800}
+.pitem.on .box{background:var(--ok);border-color:var(--ok)}
+.pitem.on .txt{text-decoration:line-through;opacity:.6}
+.plate{margin-top:12px;padding:12px;border-radius:12px;background:var(--bg);border:1px solid var(--line);line-height:1.5}
+.now{font-size:12px;color:var(--muted);margin-top:6px;min-height:16px}
+.now a{color:var(--navy2)}
+button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+</style>
+<header>
+  <div class="htop"><h1>Göbek Antrenmanı</h1><small>Zıplamasız · ekipmansız</small></div>
+  <nav id="tabs" role="tablist"></nav>
+</header>
+<main>
+  <section class="card" id="prepCard" hidden>
+    <h2>Cumartesi: Yemek hazırlığı</h2>
+    <button class="prepbtn" id="prepBtn">Yemek hazırlığı yapıldı ✓</button>
+    <p class="note" id="prepNote"></p>
+  </section>
+  <section class="card" id="dayCard">
+    <h2 id="title"></h2>
+    <p class="sub" id="subtitle"></p>
+    <p class="rounds" id="rounds"></p>
+  </section>
+  <div class="gifwrap" id="gifwrap"><div class="gif anim" id="anim" role="img" aria-label="Hareket animasyonu"><div id="animIn"></div></div><div class="ov" id="ov" hidden><span id="ovPhase">SÜRE</span><b id="ovClock">00:00</b></div><div class="lastb" id="lastBadge" hidden></div><button class="finish" id="finishBtn" hidden>✓ Bitir</button><div class="kegel" id="kegel" hidden>
+    <h3 id="kegelTitle">Kegel</h3>
+    <div class="kc" id="kegelCircle"><div><span id="kegelWord">HAZIR</span><small id="kegelSec"></small></div></div>
+    <div class="kt" id="kegelCount"></div>
+    <div class="kn">Sırtüstü uzan, dizler bükülü. Pelvik tabanı içeri ve yukarı çek (idrarı kesiyormuş gibi), yaklaşık %70 güçle. Karın, kalça ve bacaklar gevşek; nefesini tutma, ıkınma.</div>
+    <div class="krow"><button class="btn sm" id="kegelSkip">Kegel'i atla</button></div>
+  </div></div>
+  <section class="card timer" id="timer" aria-live="polite">
+    <div class="phase" id="phase"></div>
+    <div id="roundtxt" class="note"></div>
+    <div class="row">
+      <button class="btn" id="prevBtn">◀ Önceki</button>
+      <button class="btn" id="nextBtn">Sonraki ▶</button>
+    </div>
+  </section>
+  <section class="card" id="listCard">
+    <ol id="list"></ol>
+    <p class="extra" id="extra"></p>
+    <div class="kegelinfo"><div><b>Son set bitince: Duvar oturuşu → Kegel</b><span id="wallDose"></span><span id="kegelDose"></span></div><button class="btn sm" id="kegelNow">Şimdi yap</button></div>
+    <p class="note">Duvar oturuşu: tansiyonun yüksekse ya da ilaç kullanıyorsan önce doktoruna sor. Ayak bileğinde ağrı 10 üzerinden 3'ü geçerse bırak.</p>
+    <p class="note">Isınma: 5 dk yerinde yürüyüş + eklem çevirme. Ayak bileğinde ağrı 10 üzerinden 3'ü geçerse o hareketi bırak.</p>
+  </section>
+  <section class="card" id="calCard">
+    <div class="chainhead">
+      <div><div class="eyebrow">100 GÜNLÜK ZİNCİR</div><div class="streak"><b id="chainCount">0</b><span>/100 gün</span></div></div>
+      <div class="best">En iyi zincir<br><b id="chainBest">0</b> gün</div>
+    </div>
+    <div class="chainbar"><div id="chainFill"></div></div>
+    <p class="chainmsg" id="chainMsg"></p>
+    <div class="chain" id="chainGrid"></div>
+    <p class="note">Hafta sonu dinlenme günü: Cumartesi ve Pazar zinciri kırmaz. Hafta içi bir günü kaçırırsan zincir sıfırdan başlar ama geçmişin silinmez.</p>
+    <div id="chainDetail" class="caldetail" hidden></div>
+    <details class="calwrap"><summary>Takvim görünümü</summary>
+    <div class="calhead"><button class="btn sm" id="calPrev" aria-label="Önceki ay">◀</button><h2 id="calTitle"></h2><button class="btn sm" id="calNext" aria-label="Sonraki ay">▶</button></div>
+    <div class="calgrid" id="calGrid"></div>
+    <p class="note" id="calSum"></p>
+    <div id="calDetail" class="caldetail" hidden></div>
+    </details>
+    <details class="calwrap backup"><summary>İlerlemeyi taşı / yedekle</summary>
+    <p class="note">Telefon değiştirirsen ya da ilerlemeni başka yere taşımak istersen: "Kodu kopyala" ile yedek kodunu al, diğer yerde kutuya yapıştırıp "Kodu yükle"ye bas. Var olan kayıtlar silinmez, birleştirilir.</p>
+    <textarea id="bkText" placeholder="Yedek kodunu buraya yapıştır" autocapitalize="off" autocomplete="off" spellcheck="false"></textarea>
+    <div class="row"><button class="btn sm" id="bkCopy">Kodu kopyala</button><button class="btn sm" id="bkLoad">Kodu yükle</button></div>
+    <p class="note" id="bkMsg"></p>
+    </details>
+  </section>
+</main>
+<video id="keepAwake" src="uyanik.mp4" muted playsinline loop preload="auto" style="position:fixed;width:1px;height:1px;opacity:0;pointer-events:none;left:0;bottom:0"></video>
+<footer class="player">
+  <div class="pl">
+    <button class="start" id="startBtn">▶ Antrenmanı başlat</button>
+    <button class="skip reset" id="resetBtn">↺ Sıfırla</button>
+  </div>
+  <div class="now" id="now">Gününü seç ve Başlat'a bas. Süre görselin sağ üstünde görünür.</div>
+</footer>
+
+<script>
+const META = {"pazartesi_0":{"n":40,"cols":6,"rows":7,"d":[70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220]},"pazartesi_1":{"n":20,"cols":6,"rows":4,"d":[70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220]},"pazartesi_2":{"n":20,"cols":6,"rows":4,"d":[70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220]},"pazartesi_3":{"n":16,"cols":6,"rows":3,"d":[180,180,180,180,180,180,180,180,180,180,180,180,180,180,180,180]},"pazartesi_4":{"n":20,"cols":6,"rows":4,"d":[70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220]},"sali_0":{"n":20,"cols":6,"rows":4,"d":[70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220]},"sali_1":{"n":20,"cols":6,"rows":4,"d":[70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220]},"sali_2":{"n":40,"cols":6,"rows":7,"d":[70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220]},"sali_3":{"n":20,"cols":6,"rows":4,"d":[70,70,70,70,70,70,70,70,70,600,70,70,70,70,70,70,70,70,70,220]},"sali_4":{"n":20,"cols":6,"rows":4,"d":[70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220]},"carsamba_0":{"n":20,"cols":6,"rows":4,"d":[70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220]},"carsamba_1":{"n":40,"cols":6,"rows":7,"d":[70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220]},"carsamba_2":{"n":40,"cols":6,"rows":7,"d":[70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220]},"carsamba_3":{"n":20,"cols":6,"rows":4,"d":[70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220]},"persembe_0":{"n":20,"cols":6,"rows":4,"d":[70,70,70,70,70,70,70,70,70,600,70,70,70,70,70,70,70,70,70,220]},"persembe_1":{"n":40,"cols":6,"rows":7,"d":[70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220]},"persembe_2":{"n":40,"cols":6,"rows":7,"d":[70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220]},"persembe_3":{"n":20,"cols":6,"rows":4,"d":[70,70,70,70,70,70,70,70,70,600,70,70,70,70,70,70,70,70,70,220]},"persembe_4":{"n":40,"cols":6,"rows":7,"d":[70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220]},"cuma_0":{"n":20,"cols":6,"rows":4,"d":[70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220]},"cuma_1":{"n":20,"cols":6,"rows":4,"d":[70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220]},"cuma_2":{"n":20,"cols":6,"rows":4,"d":[70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220]},"cuma_3":{"n":20,"cols":6,"rows":4,"d":[70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220]},"cuma_4":{"n":20,"cols":6,"rows":4,"d":[70,70,70,70,70,70,70,70,70,220,70,70,70,70,70,70,70,70,70,220]}};
+Object.assign(META,{"ch_climber":{"n":65,"cols":8,"rows":9,"d":[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100],"ar":"360/390"},"ch_highknee":{"n":76,"cols":8,"rows":10,"d":[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100],"ar":"360/390"},"ch_cross":{"n":68,"cols":8,"rows":9,"d":[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100],"ar":"360/390"},"ch_forearm":{"n":74,"cols":8,"rows":10,"d":[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100],"ar":"360/390"},"ch_plank":{"n":60,"cols":8,"rows":8,"d":[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100],"ar":"360/390"},"ch_seated":{"n":38,"cols":8,"rows":5,"d":[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100],"ar":"360/390"}});
+// Animasyon: sprite sayfasındaki kareleri zamana göre oynatır. Her zaman oynar.
+// Kutu boyutu sabittir (360/390); her sprite kutuya ortalanarak sığdırılır. Yeni görsel yüklenmeden eskisi değişmez.
+let animKey=null, shownKey=null, animStart=0, animRAF=null, lastPos="";
+const animImgs={};
+function loadImg(key){ if(!animImgs[key]){ const im=new Image(); im.decoding="async"; im.src=`${key}.png`; animImgs[key]=im; } return animImgs[key]; }
+function layoutAnim(){
+  const m=META[shownKey]; if(!m) return; const box=document.getElementById("anim"), el=document.getElementById("animIn");
+  const W=box.clientWidth, H=box.clientHeight; if(!W||!H) return;
+  const [a,b]=(m.ar||"392/322").split("/").map(Number), ar=a/b;
+  let w=W, h=W/ar; if(h>H){ h=H; w=H*ar; }
+  el.style.width=w+"px"; el.style.height=h+"px"; el.style.left=((W-w)/2)+"px"; el.style.top=((H-h)/2)+"px";
+}
+function framePos(m,f){ const c=f%m.cols, r=Math.floor(f/m.cols); return `${m.cols>1?c/(m.cols-1)*100:0}% ${m.rows>1?r/(m.rows-1)*100:0}%`; }
+function showAnim(key){
+  if(!META[key]) return;
+  if(key===animKey && animRAF) return;
+  animKey=key; const m=META[key];
+  if(!m.T) m.T=m.d.reduce((a,b)=>a+b,0);
+  const im=loadImg(key);
+  const apply=()=>{
+    if(animKey!==key) return;
+    const el=document.getElementById("animIn");
+    // tek seferde değiştir: görsel, boyut, ilk kare
+    shownKey=key; layoutAnim();
+    el.style.backgroundImage=`url(${key}.png)`; el.style.backgroundSize=`${m.cols*100}% ${m.rows*100}%`;
+    lastPos=framePos(m,0); el.style.backgroundPosition=lastPos; el.classList.add("on");
+    animStart=performance.now();
+  };
+  const ready=()=> (im.decode ? im.decode().catch(()=>{}) : Promise.resolve()).then(apply);
+  if(im.complete && im.naturalWidth) ready(); else im.addEventListener("load",ready,{once:true});
+  if(!animRAF) animRAF=requestAnimationFrame(animLoop);
+}
+function animLoop(now){
+  animRAF=requestAnimationFrame(animLoop);
+  const m=META[shownKey]; if(!m||!m.T) return;
+  let t=(now-animStart)%m.T, f=0; while(f<m.n-1 && t>=m.d[f]){ t-=m.d[f]; f++; }
+  const pos=framePos(m,f);
+  if(pos!==lastPos){ document.getElementById("animIn").style.backgroundPosition=pos; lastPos=pos; }
+}
+window.addEventListener("resize",layoutAnim);
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden && animKey){ cancelAnimationFrame(animRAF); animRAF=requestAnimationFrame(animLoop); } });
+const akey=(d,i)=>d.ex[i][2]||`${d.k}_${i}`;
+function preload(d){ d.ex.forEach((_,i)=>loadImg(akey(d,i))); loadImg("wallsit_half"); loadImg("wallsit_deep"); }
+Object.assign(META,{"wallsit_half":{"n":77,"cols":8,"rows":10,"d":[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100],"ar":"360/390"},"wallsit_deep":{"n":77,"cols":8,"rows":10,"d":[100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100,100],"ar":"360/390"}});
+const DAYS = [
+ {k:"pazartesi",tab:"Pzt",name:"Pazartesi",sub:"Karın & core A",rounds:"turlar arası 60 sn dinlenme",tours:3,restTour:60,
+  ex:[["Ölü böcek (Dead bug)","10 tekrar / taraf","pazartesi_0"],["Yavaş bisiklet crunch","12 tekrar / taraf","pazartesi_1"],["🪑 Sandalyede oturarak diz çekiş","10–12 tekrar · yavaş","ch_seated"],["Ters crunch","10 tekrar","pazartesi_2"],["Diz üstü plank","20–30 sn tut","pazartesi_3"],["Kalça köprüsü","12 tekrar","pazartesi_4"]],
+  extra:"+ 30 dk tempolu yürüyüş"},
+ {k:"sali",tab:"Sal",name:"Salı",sub:"Tüm vücut kuvvet A",rounds:"hareketler arası 30 sn dinlenme",tours:3,restEx:30,
+  ex:[["Sandalyeye otur-kalk","10–12 tekrar","sali_0"],["Duvar şınavı","10–12 tekrar","sali_1"],["🪑 Eğimli plank (eller sandalyede)","20–30 sn tut","ch_plank"],["Kuş-köpek (Bird dog)","8 tekrar / taraf","sali_2"],["Diz üstü yan plank","20 sn / taraf","sali_3"],["Kalça köprüsü","15 tekrar","sali_4"]],
+  extra:"+ 20–30 dk tempolu yürüyüş"},
+ {k:"carsamba",tab:"Çar",name:"Çarşamba",sub:"Zıplamasız kardiyo devresi",rounds:"40 sn çalış / 20 sn dinlen",tours:4,toursLate:5,interval:[40,20],
+  ex:[["Yerinde diz çekerek yürüyüş","40 sn","carsamba_0"],["🪑 Eğimli mountain climber","40 sn · konuşabileceğin tempo","ch_climber"],["Gölge boks","40 sn","carsamba_1"],["Ayakta çapraz diz-dirsek","40 sn","carsamba_2"],["Tempolu sandalye squat","40 sn","carsamba_3"]],
+  extra:"+ 20 dk tempolu yürüyüş"},
+ {k:"persembe",tab:"Per",name:"Perşembe",sub:"Karın & core B (bel dostu)",rounds:"turlar arası 60 sn dinlenme",tours:3,restTour:60,
+  ex:[["Curl-up (McGill)","6–8 tekrar × 8 sn tut","persembe_0"],["Bükük diz topuk dokundurma","10 tekrar / taraf","persembe_1"],["🪑 Önkol plank diz çekiş (sandalye)","6–8 tekrar / taraf · yavaş","ch_forearm"],["Kuş-köpek (Bird dog)","8 tekrar / taraf","persembe_2"],["Diz üstü yan plank","20–30 sn / taraf","persembe_3"],["Ölü böcek (Dead bug)","10 tekrar / taraf","persembe_4"]],
+  extra:"+ 30 dk tempolu yürüyüş"},
+ {k:"cuma",tab:"Cum",name:"Cuma",sub:"Tüm vücut kuvvet B",rounds:"hareketler arası 30 sn dinlenme",tours:3,restEx:30,
+  ex:[["Sandalyeye otur-kalk","12 tekrar","cuma_0"],["Diz üstü şınav","8–10 tekrar","cuma_1"],["🪑 Çapraz mountain climber (sandalye)","8–10 tekrar / taraf · kontrollü","ch_cross"],["Süperman","10 tekrar × 2 sn","cuma_2"],["Ters crunch","10 tekrar","cuma_3"],["Kalça köprüsü","15 tekrar","cuma_4"]],
+  extra:"+ 30 dk tempolu yürüyüş"},
+ {k:"cumartesi",tab:"Cmt",name:"Cumartesi",sub:"Sandalye kombinasyonu (karın) + yemek hazırlığı",rounds:"30 sn çalış / 30 sn dinlen",tours:3,interval:[30,30],
+  ex:[["🪑 Eğimli mountain climber","30 sn · rahat tempo","ch_climber"],["🪑 Sandalyede oturarak diz çekiş","30 sn · yavaş","ch_seated"],["🪑 Çapraz mountain climber","30 sn · kontrollü","ch_cross"],["🪑 Eğimli plank","30 sn tut","ch_plank"],["🪑 Yüksek diz + kalça kaldırma","30 sn · yavaş, tepede 1 sn","ch_highknee"],["🪑 Önkol plank diz çekiş","30 sn · yavaş","ch_forearm"]],
+  extra:"+ 30–45 dk rahat yürüyüş. Sandalyeyi duvara daya ki kaymasın."}
+];
+const $ = id => document.getElementById(id);
+const store = {get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
+
+let day = 0, stIdx = 0, playing = false;
+let cur = 0, tour = 1, t0 = 0, tick = null, ivPhase = "work", ivLeft = 0;
+
+function realDayIdx(){const d=new Date().getDay();return d>=1&&d<=6?d-1:-1}
+function todayIdx(){const t=realDayIdx();return t<0?0:t}
+function renderTabs(){
+  const t=realDayIdx();
+  $("tabs").innerHTML = DAYS.map((d,i)=>`<button role="tab" aria-selected="${i===day}" data-i="${i}">${d.tab}${i===t?'<span class="today">bugün</span>':''}</button>`).join("");
+  $("tabs").querySelectorAll("button").forEach(b=>b.onclick=()=>{ if(playing) stopAll(); day=+b.dataset.i; render(); });
+}
+function toursFor(d){ const wk=kegelPlan().wk; if(wk<=2) return 2; if(d.toursLate && wk>=5) return d.toursLate; return d.tours; }
+function roundsText(d){ const wk=kegelPlan().wk, n=toursFor(d);
+  return `${n} tur · ${d.rounds}` + (wk<=2 ? ` · ilk 2 hafta 2 tur, 3. haftadan itibaren ${d.tours} tur` : (d.toursLate&&wk<5 ? ` · 5. haftadan itibaren ${d.toursLate} tur` : "")); }
+function updDoses(){ const d=DAYS[day]; $("rounds").textContent=roundsText(d); $("kegelDose").textContent = "Kegel: "+kegelDoseText(); $("wallDose").textContent = "Duvar: "+wallDoseText(); }
+function renderPrep(){
+  const k=dstr(new Date()), done=!!(hist[k]&&hist[k].prep), b=$("prepBtn");
+  b.classList.toggle("on",done);
+  b.textContent = done ? "✓ Yemek hazırlığı yapıldı" : "Yemek hazırlığı yapıldı ✓";
+  $("prepNote").textContent = done ? "Zincire eklendi. Geri almak için tekrar dokun." : "Hazırlığı bitirince dokun.";
+  b.onclick=async()=>{
+    const r0=hist[k];
+    if(r0&&r0.prep){
+      if(r0.sets&&r0.sets.length) await saveRecord({...r0, prep:false});
+      else { delete hist[k]; saveLocal(); renderCal(); if(histRef){ try{ await histRef.doc(k).delete(); }catch(e){} } }
+    }
+    else await saveRecord({...(r0||{date:k, day:"Cumartesi", sub:"Yemek hazırlığı", items:[], sets:[]}), prep:true});
+    renderPrep();
+  };
+}
+function render(){
+  renderTabs();
+  const d = DAYS[day];
+  endWall(false); if(kegelIdx>=0) endKegel(); if(!playing){ $("timer").classList.remove("on"); $("ov").hidden=true; $("finishBtn").hidden=true; $("lastBadge").hidden=true; }
+  $("prepCard").hidden = d.k!=="cumartesi"; if(d.k==="cumartesi") renderPrep();
+  $("title").textContent = d.name; $("subtitle").textContent = d.sub; updDoses();
+  showAnim(akey(d,0)); preload(d); $("extra").textContent = d.extra;
+  $("list").innerHTML = d.ex.map((e,i)=>`<li class="ex" data-i="${i}"><div class="n">${i+1}</div><div class="t"><b>${e[0]}</b><span>${e[1]}</span></div></li>`).join("");
+  $("list").querySelectorAll("li").forEach(li=>li.onclick=()=>{ if(playing) li.classList.toggle("done"); else { showAnim(akey(d,+li.dataset.i)); $("list").querySelectorAll("li").forEach(x=>x.classList.toggle("cur",x===li)); } });
+  markCur(); showResumeHint();
+}
+function markCur(){
+  $("list").querySelectorAll("li").forEach((li,i)=>li.classList.toggle("cur", playing && i===cur));
+  if(playing) showAnim(akey(DAYS[day],cur));
+  { const d=DAYS[day], last=playing && cur===d.ex.length-1, b=$("lastBadge"); b.hidden=!last; if(last) b.textContent = tour>=toursFor(d) ? "🏁 Son hareket · Son tur!" : `🏁 Son hareket · ${tour}. tur`; }
+  if(playing){ const d=DAYS[day]; $("roundtxt").textContent = `Tur ${tour}/${toursFor(d)} · ${cur+1}. hareket: ${d.ex[cur][0]} (${d.ex[cur][1]})`; }
+}
+
+function playRadio(){} function stopRadio(){}
+// ---------- Antrenman zamanlayıcı ----------
+const fmt = s => String(Math.floor(s/60)).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
+function audioCtx(){ try{ const c=beep.c||(beep.c=new (window.AudioContext||window.webkitAudioContext)()); if(c.state!=="running") c.resume(); return c; }catch(e){ return null; } }
+function unlockAudio(){ const c=audioCtx(); if(!c) return; try{ const o=c.createOscillator(),g=c.createGain(); g.gain.value=0; o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+.01); }catch(e){} }
+function beep(){ try{ const c=audioCtx(); if(!c) return; const o=c.createOscillator(),g=c.createGain(); o.frequency.value=880; g.gain.value=.15; o.connect(g); g.connect(c.destination); o.start(); o.stop(c.currentTime+.18);}catch(e){} if(navigator.vibrate) navigator.vibrate(150); }
+let exSec=0, times={};
+function showTimes(){ const d=DAYS[day]; $("list").querySelectorAll("li").forEach((li,i)=>{ const t=times[i]; li.querySelector("span").textContent = d.ex[i][1] + (t ? " · ⏱ " + t.map((x,j)=>x==null?null:`${j+1}. set: ${x} sn`).filter(Boolean).join(", ") : ""); }); }
+let resting=false, restLeft=0;
+function startRest(sec,msg){ if(!sec) { resting=false; return; } resting=true; restLeft=sec; setClock(fmt(sec),"DİNLEN",true); $("phase").textContent=msg+` ${sec} sn dinlen (Sonraki ile atlayabilirsin).`; }
+function endRest(){ resting=false; exSec=0; setClock("00:00","SÜRE",false); $("phase").textContent="Başla! Tekrarları bitirince Sonraki'ye bas."; beep(); }
+function step(dir){
+  if(wallOn){ if(dir>0) endWall(true); return true; }
+  if(kegelIdx>=0) return true;
+  const d=DAYS[day], nT=toursFor(d);
+  if(resting && dir>0){ endRest(); return; }
+  if(resting) resting=false;
+  const li=$("list").children[cur]; if(dir>0&&li) li.classList.add("done");
+  if(dir>0){ (times[cur]=times[cur]||[])[tour-1]=exSec; showTimes(); }
+  exSec=0; if(!d.interval) setClock("00:00","SÜRE",false);
+  cur+=dir;
+  let newTour=false;
+  if(cur>=d.ex.length){
+    if(tour<nT){ tour++; cur=0; newTour=true; $("list").querySelectorAll("li").forEach(l=>l.classList.remove("done")); }
+    else { cur=d.ex.length-1; clearInterval(tick); resting=false; $("finishBtn").hidden=true; $("lastBadge").hidden=true; saveDone(); clearProgress(); playing=false; markCur(); playing=true; startWall(true); return true; }
+  }
+  if(cur<0){ cur=0; }
+  markCur(); saveProgress();
+  if(dir<0 && !d.interval) $("phase").textContent="Tekrarları bitirince Sonraki'ye bas.";
+  if(dir>0 && !d.interval){
+    const sec = newTour ? (d.restTour||d.restEx||0) : (d.restEx||0);
+    if(sec) startRest(sec, newTour ? `Tur ${tour-1} bitti.` : "Güzel!");
+    else $("phase").textContent = newTour ? `Tur ${tour-1} bitti. Devam!` : "Tekrarları bitirince Sonraki'ye bas.";
+  }
+}
+function setClock(t,label,rest){ $("ovClock").textContent=t; $("ovPhase").textContent=label; $("ov").classList.toggle("rest",!!rest); }
+function startTimer(resume){
+  const d=DAYS[day];
+  if(resume){ cur=resume.cur; tour=resume.tour; times=resume.times||{}; }
+  else { cur=0; tour=1; times={}; }
+  t0=Date.now(); exSec=0; resting=false; showTimes(); $("list").querySelectorAll("li").forEach((l,i)=>l.classList.toggle("done", i<cur));
+  $("timer").classList.add("on"); $("timer").classList.remove("over");
+  $("phase").textContent = d.interval ? "ÇALIŞ" : (resume ? "Kaldığın yerden devam! Tekrarları bitirince Sonraki'ye bas." : "Hazır! Tekrarları bitirince Sonraki'ye bas.");
+  if(d.interval){ ivPhase="work"; ivLeft=d.interval[0]; setClock(fmt(ivLeft),"ÇALIŞ",false); } else setClock("00:00","SÜRE",false);
+  $("ov").hidden=false; $("finishBtn").hidden=false; $("finishBtn").textContent="✓ Bitir";
+  clearInterval(tick);
+  tick = setInterval(()=>{
+    if(d.interval){
+      if(ivPhase==="work") exSec++;
+      ivLeft--;
+      if(ivLeft<=3 && ivLeft>0) beep();
+      if(ivLeft<=0){
+        const lastOne = cur===d.ex.length-1 && tour>=toursFor(d);
+        if(ivPhase==="work" && !lastOne){ ivPhase="rest"; ivLeft=d.interval[1]; $("phase").textContent="DİNLEN"; beep(); }
+        else { ivPhase="work"; ivLeft=d.interval[0]; beep(); if(step(1)) return; $("phase").textContent="ÇALIŞ"; }
+      }
+      setClock(fmt(ivLeft), ivPhase==="work"?"ÇALIŞ":"DİNLEN", ivPhase!=="work");
+    } else if(resting){
+      restLeft--; setClock(fmt(Math.max(restLeft,0)),"DİNLEN",true);
+      if(restLeft<=3 && restLeft>0) beep();
+      if(restLeft<=0) endRest();
+    } else {
+      exSec++; setClock(fmt(exSec), "SÜRE", false);
+    }
+  },1000);
+  markCur();
+}
+// Yarım kalan antrenman (sayfa yenilenirse kaldığı yerden devam)
+const PKEY="gobek-devam";
+function saveProgress(){ try{ localStorage.setItem(PKEY, JSON.stringify({date:dstr(new Date()), k:DAYS[day].k, cur, tour, times})); }catch(e){} }
+function clearProgress(){ try{ localStorage.removeItem(PKEY); }catch(e){} }
+function getProgress(){ try{ const v=JSON.parse(localStorage.getItem(PKEY)||"null"); if(v && v.date===dstr(new Date()) && v.k===DAYS[day].k && (v.cur>0||v.tour>1)) return v; }catch(e){} return null; }
+function showResumeHint(){ const v=getProgress(); if(v && !playing) $("now").textContent=`Yarım kalan antrenman var: Başlat'a basınca ${v.tour}. tur ${v.cur+1}. hareketten devam eder. Baştan başlamak için Sıfırla.`; }
+let wake=null, awake=false;
+async function keepAwakeOn(){ awake=true; unlockAudio();
+  try{ const v=$("keepAwake"); v.muted=true; const p=v.play(); if(p) p.catch(()=>{}); }catch(e){}
+  try{ if(navigator.wakeLock && !wake){ wake=await navigator.wakeLock.request("screen"); wake.addEventListener("release",()=>{ wake=null; }); } }catch(e){ wake=null; } }
+function keepAwakeOff(){ awake=false; try{ $("keepAwake").pause(); }catch(e){} try{ wake?.release(); }catch(e){} wake=null; }
+document.addEventListener("visibilitychange",()=>{ if(!document.hidden && awake) keepAwakeOn(); });
+async function startAll(){
+  playing=true; stIdx=0;
+  $("startBtn").textContent="■ Durdur"; $("startBtn").classList.add("stop");
+  animKey=null; playRadio(); startTimer(getProgress()); $("now").textContent="Antrenman sürüyor.";
+  keepAwakeOn();
+  $("gifwrap").scrollIntoView({behavior:"smooth",block:"start"});
+}
+function stopAll(){
+  playing=false; clearInterval(tick); stopRadio(); endWall(false); endKegel();
+  $("startBtn").textContent="▶ Antrenmanı başlat"; $("startBtn").classList.remove("stop");
+  $("timer").classList.remove("on"); $("ov").hidden=true; $("finishBtn").hidden=true; animKey=null; showAnim(akey(DAYS[day],0)); $("now").textContent="Antrenman durduruldu."; markCur(); showResumeHint();
+  keepAwakeOff();
+}
+$("startBtn").onclick = ()=>{ unlockAudio(); playing ? stopAll() : startAll(); };
+document.addEventListener("touchend",unlockAudio,{passive:true});
+document.addEventListener("click",unlockAudio);
+$("nextBtn").onclick = ()=>{ const d=DAYS[day]; if(step(1)) return; if(d.interval){ivPhase="work";ivLeft=d.interval[0];$("phase").textContent="ÇALIŞ";setClock(fmt(ivLeft),"ÇALIŞ",false);} };
+$("prevBtn").onclick = ()=>step(-1);
+// ---------- Kegel (set bitiminde) ----------
+// Protokol: 5 sn tut / 5 sn bırak × 10 (1–2. hafta), 7 sn (3–4. hafta), 10 sn (5.+ hafta); 4. haftadan sonra sona 10 hızlı kasılma.
+function kegelPlan(){
+  const ks=Object.keys(hist).sort(); const first=ks.length?pd(ks[0]):new Date(); first.setHours(0,0,0,0);
+  const wk=Math.max(1,Math.floor((Date.now()-first.getTime())/(7*864e5))+1);
+  return {wk, hold: wk<=2?5:(wk<=4?7:10), reps:10, quick: wk>4?10:0};
+}
+function kegelDoseText(){ const k=kegelPlan(); return `${k.wk}. hafta · ${k.reps} × ${k.hold} sn sık / ${k.hold} sn bırak${k.quick?` + ${k.quick} hızlı`:""} · sırtüstü`; }
+let kegelTimer=null, kegelSeq=[], kegelIdx=-1, kegelEnd=0;
+function startKegel(){
+  const k=kegelPlan(); kegelSeq=[{w:"HAZIRLAN",s:5,c:"Sırtüstü uzan, dizleri bük"}];
+  for(let i=1;i<=k.reps;i++){ kegelSeq.push({w:"SIK",s:k.hold,c:`${i}/${k.reps} · içeri-yukarı çek`,sik:1}); kegelSeq.push({w:"BIRAK",s:k.hold,c:`${i}/${k.reps} · tamamen gevşe`}); }
+  for(let i=1;i<=k.quick;i++){ kegelSeq.push({w:"SIK",s:1,c:`Hızlı ${i}/${k.quick}`,sik:1}); kegelSeq.push({w:"BIRAK",s:1,c:`Hızlı ${i}/${k.quick}`}); }
+  $("kegel").hidden=false; $("ov").hidden=true; $("finishBtn").hidden=true; $("lastBadge").hidden=true;
+  $("gifwrap").scrollIntoView({behavior:"smooth",block:"start"});
+  kegelIdx=-1; clearInterval(kegelTimer); $("kegelTitle").textContent = hist[dstr(new Date())]&&hist[dstr(new Date())].sets&&hist[dstr(new Date())].sets.length ? "Son adım · Kegel" : "Kegel"; kegelNext(); kegelTimer=setInterval(kegelTick,200);
+}
+function kegelNext(){
+  kegelIdx++;
+  if(kegelIdx>=kegelSeq.length){ endKegel(true); return; }
+  const p=kegelSeq[kegelIdx], c=$("kegelCircle");
+  c.style.transitionDuration = (p.s>1?Math.min(1.2,p.s/3):0.35)+"s";
+  c.classList.toggle("sik",!!p.sik); $("kegelWord").textContent=p.w; $("kegelCount").textContent=p.c;
+  kegelEnd=Date.now()+p.s*1000; if(kegelIdx>0) beep();
+  kegelTick();
+}
+function kegelTick(){ if(kegelIdx<0||kegelIdx>=kegelSeq.length) return; const left=Math.ceil((kegelEnd-Date.now())/1000);
+  $("kegelSec").textContent = left>0 ? `${left} sn` : ""; if(Date.now()>=kegelEnd) kegelNext(); }
+async function endKegel(done){ // done: true=bitti, false=atlandı, undefined=iptal (durdur/sekme)
+  if(kegelIdx<0 && $("kegel").hidden) return;
+  clearInterval(kegelTimer); kegelTimer=null; const was=kegelIdx; kegelIdx=-1; $("kegel").hidden=true; $("kegelCircle").classList.remove("sik");
+  if(was<0) return;
+  const date=dstr(new Date()); const r=hist[date]; const workout=!!(r&&r.sets&&r.sets.length);
+  if(done && workout) await saveRecord({...r, kegel:true});
+  if(done===undefined) return;
+  finishFlow(workout ? (done ? "🎉 Antrenman, duvar oturuşu ve Kegel tamam! Takvime ✓ işlendi. Şimdi yürüyüş zamanı." : "🎉 Antrenman tamam! Takvime ✓ işlendi. (Kegel atlandı.) Şimdi yürüyüş zamanı.")
+                    : (done ? "✓ Kegel tamamlandı. 👍" : "Kegel atlandı."));
+}
+// Akış bittiğinde: sayaçları kapat, mesajı göster, Başlat düğmesini sıfırla
+function finishFlow(msg){
+  playing=false; clearInterval(tick); resting=false;
+  $("startBtn").textContent="▶ Antrenmanı başlat"; $("startBtn").classList.remove("stop");
+  $("ov").hidden=true; $("finishBtn").hidden=true; $("lastBadge").hidden=true;
+  $("timer").classList.add("on","over"); $("phase").textContent=msg; $("roundtxt").textContent="";
+  $("list").querySelectorAll("li").forEach(li=>li.classList.remove("cur"));
+  animKey=null; showAnim(akey(DAYS[day],0)); $("now").textContent=msg;
+  keepAwakeOff();
+}
+$("kegelSkip").onclick=()=>endKegel(false);
+$("kegelNow").onclick=()=>{ if(playing) stopAll(); keepAwakeOn(); startWall(false); };
+// ---------- Duvar oturuşu (setlerden sonra, Kegel'den önce) ----------
+function wallPlan(){ const wk=kegelPlan().wk;
+  const sec = wk<=2?30 : wk===3?45 : wk===4?60 : wk<=6?75 : wk<=8?90 : wk<=10?105 : 120;
+  return {wk, sec, deep: wk>=5}; }
+function wallDoseText(){ const w=wallPlan(); return `${w.sec} sn · ${w.deep?"dizler ~90°":"yarım iniş"}`; }
+let wallOn=false, wallTimer=null, wallEnd=0, wallPrep=true, wallBeeped=-1;
+function startWall(fromSets){
+  const w=wallPlan(); wallOn=true; wallPrep=true; wallEnd=Date.now()+5000; wallBeeped=-1;
+  animKey=null; showAnim(w.deep?"wallsit_deep":"wallsit_half");
+  $("ov").hidden=false; $("lastBadge").hidden=true; $("finishBtn").hidden=false; $("finishBtn").textContent="Kegel'e geç ▶";
+  $("timer").classList.add("on");
+  $("phase").textContent=`${fromSets?"Setler bitti! ":""}Duvar oturuşu: ${w.sec} sn. Kegel'i bununla aynı anda yapma, sıradaki adımda yatarak yapacaksın.`;
+  $("roundtxt").textContent=`${w.wk}. hafta · ${w.deep?"dizler ~90°":"yarım iniş"} · tansiyonun yüksekse önce doktoruna sor`;
+  $("gifwrap").scrollIntoView({behavior:"smooth",block:"start"});
+  clearInterval(wallTimer); wallTimer=setInterval(wallTick,200); wallTick();
+}
+function wallTick(){
+  if(!wallOn) return; const left=Math.ceil((wallEnd-Date.now())/1000);
+  if(wallPrep){ setClock(fmt(Math.max(left,0)),"HAZIRLAN",true);
+    if(left<=0){ wallPrep=false; wallEnd=Date.now()+wallPlan().sec*1000; beep(); } return; }
+  setClock(fmt(Math.max(left,0)),"DUVAR",false);
+  if(left<=3 && left>0 && wallBeeped!==left){ wallBeeped=left; beep(); }
+  if(left<=0) endWall(true);
+}
+async function endWall(done){
+  if(!wallOn) return; wallOn=false; clearInterval(wallTimer); wallTimer=null;
+  $("finishBtn").textContent="✓ Bitir"; $("finishBtn").hidden=true;
+  if(!done) return;
+  beep(); const date=dstr(new Date()), r=hist[date];
+  const held = wallPrep ? 0 : Math.min(wallPlan().sec, Math.round(wallPlan().sec-(wallEnd-Date.now())/1000)); if(held>0 && r&&r.sets&&r.sets.length) await saveRecord({...r, wall:held});
+  $("phase").textContent="✓ Duvar oturuşu bitti. Şimdi sırtüstü uzan: Kegel."; $("roundtxt").textContent="";
+  animKey=null; showAnim(akey(DAYS[day],0)); startKegel();
+}
+$("finishBtn").onclick = ()=>$("nextBtn").onclick();
+// ---------- Takvim (tamamlanan antrenmanlar) ----------
+let hist={}, histRef=null, calY, calM, calSel=null;
+const AYLAR=["Ocak","Şubat","Mart","Nisan","Mayıs","Haziran","Temmuz","Ağustos","Eylül","Ekim","Kasım","Aralık"];
+const dstr=dt=>`${dt.getFullYear()}-${String(dt.getMonth()+1).padStart(2,"0")}-${String(dt.getDate()).padStart(2,"0")}`;
+function loadLocal(){ try{ return JSON.parse(localStorage.getItem("gobek-takvim")||"{}")||{}; }catch(e){ return {}; } }
+function saveLocal(){ try{ localStorage.setItem("gobek-takvim",JSON.stringify(hist)); }catch(e){} }
+async function initHist(){
+  hist=loadLocal(); renderCal();
+  try{
+    if(!window.claude?.use) return;
+    const [db,user]=await Promise.all([claude.use("db"),claude.use("user")]);
+    const uid=user ? await user.id() : null;
+    if(!db||!uid) return;
+    histRef=db.collection("data/users/"+uid);
+    const snap=await histRef.get();
+    snap.docs.forEach(doc=>{ const v=doc.data(); if(v&&v.date) hist[v.date]=v; });
+    // Bu cihazda olup sunucuda olmayan kayıtları da gönder
+    for(const k of Object.keys(hist)){ if(!snap.docs.some(x=>x.id===k)) { try{ await histRef.doc(k).set(hist[k]); }catch(e){} } }
+    saveLocal(); renderCal(); updDoses();
+  }catch(e){}
+}
+async function saveDone(){
+  const d=DAYS[day], date=dstr(new Date());
+  const rec={date, day:d.name, sub:d.sub, prep:!!(hist[date]&&hist[date].prep), sets:d.ex.map((e,i)=>({n:e[0], t:(times[i]||[]).map(x=>x==null?0:x)}))};
+  return saveRecord(rec);
+}
+async function saveRecord(rec){
+  const date=rec.date;
+  hist[date]=rec; saveLocal(); calSel=date; const n=new Date(); calY=n.getFullYear(); calM=n.getMonth(); renderCal();
+  if(histRef){ try{ await histRef.doc(date).set(rec); }catch(e){} }
+}
+const pd=k=>{ const [y,m,d]=k.split("-").map(Number); return new Date(y,m-1,d); };
+function chainInfo(){
+  const keys=Object.keys(hist).sort(); if(!keys.length) return {cur:[],best:0,lastBreak:null};
+  const segs=[[]]; let lastBreak=null; const today=new Date(); today.setHours(0,0,0,0);
+  for(let dt=pd(keys[0]); dt<=today; dt.setDate(dt.getDate()+1)){
+    const k=dstr(dt), wd=dt.getDay();
+    if(hist[k]) segs[segs.length-1].push(k);
+    else if(wd>=1 && wd<=5 && dt<today){ if(segs[segs.length-1].length){ segs.push([]); lastBreak=k; } }
+  }
+  return {cur:segs[segs.length-1], best:Math.max(...segs.map(x=>x.length)), lastBreak};
+}
+let chainSel=null;
+function detailHtml(k){ const r=hist[k]; const [y,m,dd]=k.split("-");
+  if(r&&r.prep&&!(r.sets&&r.sets.length)) return `<b>${+dd} ${AYLAR[+m-1]} · Yemek hazırlığı yapıldı ✓</b>`;
+  return r ? `<b>${+dd} ${AYLAR[+m-1]} · ${r.day} (${r.sub}) ✓${r.prep?' · Yemek hazırlığı ✓':''}${r.wall?' · Duvar '+r.wall+' sn ✓':''}${r.kegel?' · Kegel ✓':''}</b><ul>${r.sets.map(x=>`<li>${x.n}: ${x.t.length?x.t.map((s,j)=>`${j+1}. set ${s} sn`).join(", "):"—"}</li>`).join("")}</ul>` : ""; }
+function renderChain(){
+  const {cur,best,lastBreak}=chainInfo(), n=Math.min(cur.length,100), today=dstr(new Date());
+  $("chainCount").textContent=n; $("chainBest").textContent=Math.min(best,100); $("chainFill").style.width=n+"%";
+  const m=$("chainMsg"); m.classList.remove("broken");
+  if(n>=100) m.textContent="🏆 100 gün tamam! Zinciri hiç kırmadın.";
+  else if(!n && lastBreak){ const d=pd(lastBreak); m.textContent=`💔 Zincir ${d.getDate()} ${AYLAR[d.getMonth()]} günü kırıldı. Bugün yeni zincire başla!`; m.classList.add("broken"); }
+  else if(!n) m.textContent="İlk antrenmanını bitir, zincirin ilk halkası eklensin.";
+  else m.textContent = hist[today] ? `🔗 Bugünün halkası eklendi. ${100-n} gün kaldı!` : `🔗 Zincir sürüyor. Bugünkü antrenmanı bitir, ${n+1}. halkayı ekle!`;
+  let h=""; for(let i=0;i<100;i++){ const k=cur[i];
+    h+=`<button class="${k?"on":""} ${i===n&&!hist[today]?"next":""} ${(i+1)%25===0?"ms":""} ${k&&k===chainSel?"sel":""}" ${k?`data-k="${k}"`:""} aria-label="${i+1}. gün${k?", tamamlandı":""}">${i+1}</button>`; }
+  $("chainGrid").innerHTML=h;
+  $("chainGrid").querySelectorAll("button[data-k]").forEach(b=>b.onclick=()=>{ chainSel=b.dataset.k; renderChain(); });
+  const box=$("chainDetail"); box.hidden=!(chainSel&&hist[chainSel]); if(!box.hidden) box.innerHTML=detailHtml(chainSel);
+}
+function renderCal(){
+  renderChain();
+  if(calY==null){ const n=new Date(); calY=n.getFullYear(); calM=n.getMonth(); }
+  $("calTitle").textContent=`${AYLAR[calM]} ${calY}`;
+  const first=new Date(calY,calM,1), off=(first.getDay()+6)%7, days=new Date(calY,calM+1,0).getDate(), today=dstr(new Date());
+  let h=["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"].map(w=>`<div class="wd">${w}</div>`).join("");
+  for(let i=0;i<off;i++) h+="<div></div>";
+  let cnt=0;
+  for(let dd=1;dd<=days;dd++){ const k=dstr(new Date(calY,calM,dd)); const done=!!hist[k]; if(done) cnt++;
+    h+=`<button data-k="${k}" class="${done?"done":""} ${k===today?"today":""} ${k===calSel?"sel":""}" aria-label="${dd} ${AYLAR[calM]}${done?", tamamlandı":""}">${dd}</button>`; }
+  $("calGrid").innerHTML=h;
+  $("calSum").textContent = cnt ? `Bu ay ${cnt} gün işaretlendi. Ayrıntı için tarihe dokun.` : "Antrenmanını bitirdiğin günler burada ✓ ile işaretlenir.";
+  $("calGrid").querySelectorAll("button").forEach(b=>b.onclick=()=>{ calSel=b.dataset.k; renderCal(); });
+  const box=$("calDetail"), r=calSel&&hist[calSel];
+  if(!calSel){ box.hidden=true; return; }
+  box.hidden=false;
+  const [y,m,dd]=calSel.split("-");
+  box.innerHTML = r ? detailHtml(calSel)
+                    : `<b>${+dd} ${AYLAR[+m-1]}</b><br><span class="note">Bu gün tamamlanmış antrenman yok.</span>`;
+}
+$("calPrev").onclick=()=>{ calM--; if(calM<0){calM=11;calY--;} renderCal(); };
+$("calNext").onclick=()=>{ calM++; if(calM>11){calM=0;calY++;} renderCal(); };
+let resetArm=null;
+function resetAll(){
+  if(playing) stopAll();
+  times={}; exSec=0; cur=0; tour=1; resting=false; clearProgress();
+  $("list").querySelectorAll("li").forEach(l=>l.classList.remove("done","cur")); showTimes();
+  animKey=null; showAnim(akey(DAYS[day],0)); setClock("00:00","SÜRE",false);
+  $("now").textContent="Antrenman sıfırlandı. Başlamak için Başlat'a bas.";
+}
+$("resetBtn").onclick = ()=>{
+  const b=$("resetBtn");
+  if(!resetArm){ b.textContent="Emin misin? Tekrar dokun"; b.classList.add("confirm");
+    resetArm=setTimeout(()=>{ resetArm=null; b.textContent="↺ Sıfırla"; b.classList.remove("confirm"); },3000); return; }
+  clearTimeout(resetArm); resetArm=null; b.textContent="↺ Sıfırla"; b.classList.remove("confirm"); resetAll();
+};
+
+// ---------- Yedek (ilerlemeyi taşıma) ----------
+function b64e(str){ return btoa(unescape(encodeURIComponent(str))); }
+function b64d(str){ return decodeURIComponent(escape(atob(str))); }
+function importBackup(code){
+  code=(code||"").trim().replace(/^.*?GA1:/s,"").replace(/\s+/g,"");
+  const data=JSON.parse(b64d(code)); let n=0;
+  for(const [k,v] of Object.entries(data||{})){ if(!/^\d{4}-\d{2}-\d{2}$/.test(k)||!v||typeof v!=="object") continue;
+    const cur=hist[k]; hist[k]= cur ? {...v, ...cur, prep:!!(cur.prep||v.prep), kegel:!!(cur.kegel||v.kegel), wall:Math.max(cur.wall||0,v.wall||0)||undefined, sets:(cur.sets&&cur.sets.length)?cur.sets:(v.sets||[])} : v; n++; }
+  saveLocal(); renderCal(); updDoses(); return n;
+}
+$("bkCopy").onclick=async()=>{ const code="GA1:"+b64e(JSON.stringify(hist)); $("bkText").value=code;
+  try{ await navigator.clipboard.writeText(code); $("bkMsg").textContent="Kod kopyalandı ✓ ("+Object.keys(hist).length+" gün)"; }
+  catch(e){ $("bkText").select(); $("bkMsg").textContent="Kodu seçip elle kopyala."; } };
+$("bkLoad").onclick=()=>{ try{ const n=importBackup($("bkText").value); $("bkMsg").textContent=n?`✓ ${n} günlük kayıt yüklendi.`:"Kodda kayıt bulunamadı."; if(n) $("bkText").value=""; }catch(e){ $("bkMsg").textContent="Kod okunamadı. Tamamını kopyaladığından emin ol."; } };
+try{ const m=location.hash.match(/yedek=([^&]+)/); if(m){ hist=loadLocal(); const n=importBackup(decodeURIComponent(m[1])); history.replaceState(null,"",location.pathname); setTimeout(()=>{ $("now").textContent=`✓ ${n} günlük eski kayıt yüklendi.`; },300); } }catch(e){}
+// ---------- Çevrimdışı çalışma ----------
+try{ navigator.storage?.persist?.(); }catch(e){}
+if("serviceWorker" in navigator){
+  const hadCtrl=!!navigator.serviceWorker.controller;
+  navigator.serviceWorker.register("sw.js").catch(()=>{});
+  let reloaded=false;
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{ if(reloaded) return; const go=()=>{ if(!playing && !wallOn && kegelIdx<0){ reloaded=true; location.reload(); } else setTimeout(go,5000); }; if(hadCtrl) go(); });
+}
+day = todayIdx(); try{ const v=JSON.parse(localStorage.getItem(PKEY)||"null"); if(v&&v.date===dstr(new Date())){ const i=DAYS.findIndex(x=>x.k===v.k); if(i>=0) day=i; } }catch(e){}
+render(); initHist().then(()=>{ updDoses(); showResumeHint(); });
+</script>
+
+</body></html>
