@@ -613,7 +613,13 @@ const RADIOS=[
  {id:"powerturk", n:"Power Türk · Türkçe pop", u:"https://listen.powerapp.com.tr/powerturk/mpeg/icecast.audio"},
  {id:"fenomen", n:"Radyo Fenomen · hit pop", u:"https://live.radyofenomen.com/fenomen/128/icecast.audio"},
  {id:"powerpop", n:"Power Pop · yabancı pop", u:"https://listen.powerapp.com.tr/powerpop/mpeg/icecast.audio"},
- {id:"capitalxtra", n:"Capital XTRA · yabancı rap / hip-hop", u:"https://media-the.musicradio.com/CapitalXTRALondonMP3"}
+ {id:"capitalxtra", n:"Capital XTRA · yabancı rap / hip-hop", u:"https://media-the.musicradio.com/CapitalXTRALondonMP3"},
+ {g:"Spor / Motivasyon (dünyadan)", id:"iloveworkout", n:"I Love Workout · spor hitleri (Almanya)", u:"https://ilm.stream27.radiohost.de/ilm_iloveworkout_mp3-192"},
+ {g:"Spor / Motivasyon (dünyadan)", id:"hiphopworkout", n:"Hip Hop Workout · antrenman rap (ABD)", u:"https://stream.revma.ihrhls.com/zc7785"},
+ {g:"Spor / Motivasyon (dünyadan)", id:"rtlworkout", n:"89.0 RTL Workout · dance / EDM (Almanya)", u:"https://stream.89.0rtl.de/workout/mp3-256"},
+ {g:"Spor / Motivasyon (dünyadan)", id:"hotmixsport", n:"Hotmix Sport · workout dance (Fransa)", u:"https://streaming.hotmixradio.com/hotmix-sport-plus-en-mp3"},
+ {g:"Spor / Motivasyon (dünyadan)", id:"fmvfit", n:"FIT Radio High Energy · yüksek tempo (Romanya)", u:"https://radio.webicdp.com/listen/fmvfitradiohighenergy/radio.mp3"},
+ {g:"Spor / Motivasyon (dünyadan)", id:"europa2fit", n:"Europa 2 Fitness · fitness pop / dance (Slovakya)", u:"https://stream.bauermedia.sk/fitness-hi.aac"}
 ];
 const radio=new Audio(); radio.preload="none"; radio.setAttribute("playsinline","");
 let radioWant=false, radioRetry=null;
@@ -633,8 +639,9 @@ radio.addEventListener("error",()=>{ if(!radioWant) return; radioUI("loading"); 
   radioRetry=setTimeout(()=>{ if(!radioWant) return; if(navigator.onLine) radioPlay(); else { radioWant=false; radioUI("stopped"); } },4000);
   $("now").textContent="Radyo bağlantısı koptu, yeniden deneniyor…"; });
 radio.addEventListener("pause",()=>{ if(radioWant && !radio.error && radio.src) { radioWant=false; radioUI("stopped"); } });
-$("radioSel").innerHTML=RADIOS.map(r=>`<option value="${r.id}">${r.n}</option>`).join("");
-$("radioSel").value=store.get("gobek-radyo")||RADIOS[0].id;
+{ const grp={}; RADIOS.forEach(r=>{ const g=r.g||"Pop & Rap"; (grp[g]=grp[g]||[]).push(r); });
+  $("radioSel").innerHTML=Object.entries(grp).map(([g,rs])=>`<optgroup label="${g}">`+rs.map(r=>`<option value="${r.id}">${r.n}</option>`).join("")+`</optgroup>`).join(""); }
+$("radioSel").value=store.get("gobek-radyo")||RADIOS[0].id; if(!$("radioSel").value) $("radioSel").value=RADIOS[0].id;
 $("radioSel").onchange=()=>{ store.set("gobek-radyo",$("radioSel").value); if(radioWant) radioPlay(); };
 $("radioBtn").onclick=()=>{ unlockAudio(); radioWant ? radioStop() : radioPlay(); };
 window.addEventListener("online",()=>radioUI(radioWant?"loading":"stopped"));
