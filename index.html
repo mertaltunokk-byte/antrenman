@@ -128,6 +128,18 @@ footer.player{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--
 .skip{border:1px solid var(--line);background:var(--bg);color:var(--ink);border-radius:14px;padding:14px 12px;font:700 13px var(--font);cursor:pointer}
 .reset.confirm{background:var(--red);color:#fff;border-color:var(--red)}
 .r100{display:block;margin:10px 0 4px}
+.burnbtn{display:flex;align-items:center;gap:12px;width:100%;text-align:left;border:2px solid #e8590c;border-radius:14px;padding:14px;background:var(--card);color:var(--ink);font:800 17px var(--font);cursor:pointer}
+.burnbtn .bi{font-size:30px;line-height:1}
+.burnbtn small{display:block;font:600 12.5px var(--font);color:var(--muted);margin-top:2px}
+body.burn .burnbtn{border-color:var(--line);font-size:15px}
+body.burn .daily,body.burn #ayarBtn,body.burn #ayar,body.burn #sunCard,body.burn #prepCard{display:none!important}
+.kgrow{display:none;align-items:center;gap:10px;margin-top:10px}
+body.burn .kgrow{display:flex}
+.kgrow span{flex:1;font-weight:700}.kgrow b{min-width:64px;text-align:center;font-size:17px}
+.kgrow button{width:44px;height:44px;border-radius:12px;border:1px solid var(--line);background:var(--card);color:var(--ink);font:800 22px var(--font);cursor:pointer}
+.burnlog{display:none;margin:8px 0 0;font-weight:700;color:#e8590c}
+body.burn .burnlog{display:block}
+.ov small{display:block;font-size:12px;font-weight:800;margin-top:2px}
 .r100.confirm{background:var(--red);color:#fff;border-color:var(--red)}
 .calhead{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:10px}
 .calhead h2{font-size:18px;text-align:center;flex:1}
@@ -197,6 +209,7 @@ button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
   <div id="tabs" class="todaydate" aria-live="polite"></div>
 </header>
 <main>
+  <button class="burnbtn" id="burnBtn"></button>
   <section class="card" id="prepCard" hidden>
     <h2>Cumartesi: Yemek hazırlığı</h2>
     <button class="prepbtn" id="prepBtn">Yemek hazırlığı yapıldı ✓</button>
@@ -210,6 +223,8 @@ button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
     <h2 id="title"></h2>
     <p class="sub" id="subtitle"></p>
     <p class="rounds" id="rounds"></p>
+    <div class="kgrow"><span>Kilon (kalori hesabı için)</span><button id="kgMinus" aria-label="Kilo azalt">−</button><b id="kgVal"></b><button id="kgPlus" aria-label="Kilo artır">+</button></div>
+    <p class="burnlog" id="burnLog"></p>
     <button class="btn sm ayarbtn" id="ayarBtn">⚙️ Süreleri kendim ayarla</button>
     <div class="ayar" id="ayar" hidden>
       <div class="aypre" id="ayPre"></div>
@@ -221,7 +236,7 @@ button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
       <div class="ayact"><button class="btn sm" id="ayAuto">↺ Otomatik plana dön</button><button class="btn sm ayok" id="ayOk">Tamam</button></div>
     </div>
   </section>
-  <div class="gifwrap" id="gifwrap"><div class="cue" id="cue" hidden><b id="cueMain"></b><span id="cueSub"></span></div><div class="gif anim" id="anim" role="img" aria-label="Hareket animasyonu"><div id="animIn"></div></div><div class="ov" id="ov" hidden><span id="ovPhase">SÜRE</span><b id="ovClock">00:00</b></div><div class="lastb" id="lastBadge" hidden></div><button class="finish" id="finishBtn" hidden>⏭ Geç</button><div class="kegel" id="kegel" hidden>
+  <div class="gifwrap" id="gifwrap"><div class="cue" id="cue" hidden><b id="cueMain"></b><span id="cueSub"></span></div><div class="gif anim" id="anim" role="img" aria-label="Hareket animasyonu"><div id="animIn"></div></div><div class="ov" id="ov" hidden><span id="ovPhase">SÜRE</span><b id="ovClock">00:00</b><small id="ovKcal" hidden></small></div><div class="lastb" id="lastBadge" hidden></div><button class="finish" id="finishBtn" hidden>⏭ Geç</button><div class="kegel" id="kegel" hidden>
     <h3 id="kegelTitle">Kegel</h3>
     <div class="kc" id="kegelCircle"><div><span id="kegelWord">HAZIR</span><small id="kegelSec"></small></div></div>
     <div class="kt" id="kegelCount"></div>
@@ -240,8 +255,8 @@ button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
     <ol id="list"></ol>
     <p class="extra" id="extra"></p>
     <p class="note" id="flowNote"></p>
-    <div class="kegelinfo"><div><b>Son set bitince: Duvar oturuşu → Kegel</b><span id="wallDose"></span><span id="kegelDose"></span></div><button class="btn sm" id="kegelNow">Şimdi yap</button></div>
-    <p class="note">Duvar oturuşu: tansiyonun yüksekse ya da ilaç kullanıyorsan önce doktoruna sor. Ayak bileğinde ağrı 10 üzerinden 3'ü geçerse bırak.</p>
+    <div class="kegelinfo daily"><div><b>Son set bitince: Duvar oturuşu → Kegel</b><span id="wallDose"></span><span id="kegelDose"></span></div><button class="btn sm" id="kegelNow">Şimdi yap</button></div>
+    <p class="note daily">Duvar oturuşu: tansiyonun yüksekse ya da ilaç kullanıyorsan önce doktoruna sor. Ayak bileğinde ağrı 10 üzerinden 3'ü geçerse bırak.</p>
     <p class="note">Isınma: 5 dk yerinde yürüyüş + eklem çevirme. Ayak bileğinde ağrı 10 üzerinden 3'ü geçerse o hareketi bırak.</p>
   </section>
   <section class="card" id="calCard">
@@ -353,8 +368,24 @@ const DAYS = [
   extra:"+ 30 dk tempolu yürüyüş"},
  {k:"cumartesi",tab:"Cmt",name:"Cumartesi",sub:"Sandalye kombinasyonu (karın) + yemek hazırlığı",rounds:"",tours:3,
   ex:[["🪑 Eğimli mountain climber","rahat tempo","ch_climber"],["🪑 Sandalyede oturarak diz çekiş","yavaş","ch_seated"],["🪑 Çapraz mountain climber","kontrollü","ch_cross"],["🪑 Eğimli plank","süre boyunca tut","ch_plank"],["🪑 Yüksek diz + kalça kaldırma","yavaş, tepede 1 sn","ch_highknee"],["🪑 Önkol plank diz çekiş","yavaş","ch_forearm"]],
-  extra:"+ 30–45 dk rahat yürüyüş. Sandalyeyi duvara daya ki kaymasın."}
+  extra:"+ 30–45 dk rahat yürüyüş. Sandalyeyi duvara daya ki kaymasın."},
+ // Bağımsız seans: 100 güne, takvime ve seviyeye dokunmaz. Tur sayısı kiloya göre ~720+ kcal hedefiyle hesaplanır.
+ {k:"yakim",tab:"🔥",name:"🔥 Büyük Yakım",sub:"Tek seansta 700–800 kcal · zıplamasız, ekipmansız",burn:true,
+  ex:[["Yerinde diz çekerek yürüyüş","süre boyunca · dizleri yükselt, kolları salla","carsamba_0"],["Tempolu sandalye squat","süre boyunca · sandalyeye değ, hemen kalk","carsamba_3"],["Gölge boks","süre boyunca · hızlı yumruk, dizler hafif bükülü","carsamba_1"],["Duvar şınavı","süre boyunca · göğüs duvara, karın sıkı","sali_1"],["Ayakta çapraz diz-dirsek","süre boyunca · dirsek karşı dize","carsamba_2"],["🪑 Eğimli mountain climber","süre boyunca · konuşabileceğin en hızlı tempo","ch_climber"],["🪑 Çapraz mountain climber","süre boyunca · diz karşı dirseğe, kontrollü","ch_cross"]],
+  extra:"Haftada en fazla 2 kez, art arda iki gün değil (Cumartesi ya da Pazar uygun). 1. tur ısınma temposunda, son tur yavaşlayarak soğuma. Su şişeni yanına al. Ayak bileğinde ağrı 10 üzerinden 3'ü geçerse o hareketi yürüyüşle değiştir. Göğüs ağrısı, baş dönmesi ya da aşırı nefes darlığında dur."}
 ];
+// ---------- Büyük Yakım: kalori tahmini ----------
+// kcal = MET × kg × saat (Herrmann ve ark., 2024, Adult Compendium). Çalışma 6 MET (tempolu vücut ağırlığı devresi: Compendium'da orta 3,8, yoğun 8,0), dinlenme/hazırlan 2 MET.
+const BURN={w:60,r:30,met:6,metRest:2,target:720,max:1000};
+const isBurn=()=>!!(DAYS[day]&&DAYS[day].burn);
+function kgOf(){ const v=+(store.get("gobek-kilo")||0); return v>=40&&v<=250 ? v : 106; }
+function burnSec(d,n){ let w=0,o=5; for(let t=1;t<=n;t++) d.ex.forEach((_,i)=>{ const endT=i===d.ex.length-1, r=(endT&&t>=n)?0:((endT||(t>=3&&i%2===1))?BURN.r:0); w+=BURN.w; o+=r; if(!r&&i<d.ex.length-1) o+=prepSec(d,i,i+1); }); return {w,o}; }
+function burnKcalOf(d,n){ const s=burnSec(d,n), kg=kgOf(); return (BURN.met*s.w+BURN.metRest*s.o)*kg/3600; }
+function burnTours(d){ for(let n=4;n<=16;n++){ if(burnKcalOf(d,n)>=BURN.target) return burnKcalOf(d,n)>BURN.max?n-1:n; } return 16; }
+let burnKcal=0;
+function burnLog(){ try{ return JSON.parse(localStorage.getItem("gobek-yakim")||"[]")||[]; }catch(e){ return []; } }
+function renderBurnLog(){ const L=burnLog(), tot=L.reduce((a,x)=>a+(x.kcal||0),0); $("burnLog").textContent = L.length ? `🔥 Şimdiye kadar ${L.length} seans · toplam ~${Math.round(tot)} kcal · son: ${L[L.length-1].date.split("-").reverse().join(".")}` : "🔥 Henüz Büyük Yakım seansı yok."; }
+
 const $ = id => document.getElementById(id);
 const store = {get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
 
@@ -372,15 +403,15 @@ function todayIdx(){const t=realDayIdx();return t<0?0:t}
 function renderTabs(){
   const n=new Date(), GUN=["Pazar","Pazartesi","Salı","Çarşamba","Perşembe","Cuma","Cumartesi"];
   const sun=realDayIdx()<0;
-  $("tabs").innerHTML=`${GUN[n.getDay()]}, ${n.getDate()} ${AYLAR[n.getMonth()]}<small>${sun?"Dinlenme günü · yarın: "+DAYS[day].sub:"Bugünün antrenmanı: "+DAYS[day].sub}</small>`;
+  $("tabs").innerHTML=`${GUN[n.getDay()]}, ${n.getDate()} ${AYLAR[n.getMonth()]}<small>${isBurn()?"🔥 Büyük Yakım seansı · 100 güne sayılmaz":(sun?"Dinlenme günü · yarın: "+DAYS[day].sub:"Bugünün antrenmanı: "+DAYS[day].sub)}</small>`;
 }
 // Kullanıcı ayarı (localStorage gobek-ayar): {w,r,t}; yoksa otomatik plan
 function ayar(){ try{ const v=JSON.parse(localStorage.getItem("gobek-ayar")||"null"); if(v&&v.w&&v.t!=null) return v; }catch(e){} return null; }
-function toursFor(d){ const a=ayar(); return a ? a.t : 3; }
+function toursFor(d){ if(d&&d.burn) return burnTours(d); const a=ayar(); return a ? a.t : 3; }
 // Her hareket 1 dk, 3 tur (~20 dk). Kademe dinlenmeyle: 1–2. hafta 30 sn, 3–4. hafta 20 sn, 5. haftadan itibaren 15 sn.
 // Dinlenme: tur geçişlerinde; 1. ve 2. turda tur içinde dinlenme yok, 3. turdan itibaren 2 harekette bir.
-function workOf(){ const a=ayar(); return a ? a.w : 60; }
-function restOf(){ const a=ayar(); if(a) return a.r; const wk=kegelPlan().wk; return wk<=2?30:(wk<=4?20:15); }
+function workOf(){ if(isBurn()) return BURN.w; const a=ayar(); return a ? a.w : 60; }
+function restOf(){ if(isBurn()) return BURN.r; const a=ayar(); if(a) return a.r; const wk=kegelPlan().wk; return wk<=2?30:(wk<=4?20:15); }
 function ivOf(d){ return [workOf(), restOf()]; }
 function posture(e){ const n=e[0]; if(n.includes("🪑")) return "sandalye"; if(/otur-kalk|Duvar şınavı|Yerinde|Gölge boks|Ayakta|sandalye squat/i.test(n)) return "ayakta"; return "yer"; }
 function prepSec(d,from,to){ to=to%d.ex.length; return posture(d.ex[from])===posture(d.ex[to]) ? 5 : 10; }
@@ -389,6 +420,7 @@ function workoutMin(d){ const n=toursFor(d), w=workOf(); let sec=0; for(let t=1;
 // Ekrandaki tüm açıklamalar etkin ayardan (otomatik plan / Kolay·Normal·Zor·Hayvansı / kendi ayarın) üretilir
 function planLabel(){ const a=ayar(); if(!a) return `Otomatik plan · ${kegelPlan().wk}. hafta`; const cp=presetOf(a); return cp ? cp.n : "Kendi ayarın"; }
 function roundsText(d){ const n=toursFor(d), w=workOf(), r=restOf();
+  if(d.burn) return `${n} tur × ${d.ex.length} hareket · ${w} sn çalış · ${r} sn dinlen · yaklaşık ${String(workoutMin(d)).replace(".",",")} dk · tahmini ~${Math.round(burnKcalOf(d,n))} kcal (${kgOf()} kg için). Kilon düştükçe tur sayısı kendiliğinden artar ki hedef 700+ kcal kalsın.`;
   return `${planLabel()} · ${n} tur × ${d.ex.length} hareket · ${w} sn çalış · `+(r && n>1 ? `${r} sn dinlen` : "dinlenmesiz")+` · yaklaşık ${String(workoutMin(d)).replace(".",",")} dk`+(ayar()?"":" · dinlenme haftaya göre kısalır: 1–2. hafta 30, 3–4. hafta 20, 5. haftadan itibaren 15 sn"); }
 function flowText(d){ const n=toursFor(d), w=workOf(), r=restOf();
   const rest = !r || n<2 ? "Bu ayarda dinlenme yok." : n>=3 ? `Dinlenme ${r} sn: 1. ve 2. turda sadece tur sonunda, 3. turdan itibaren her 2 hareketten sonra da. Son turdan sonra dinlenme yok. Dinlenirken sıradaki hareketin animasyonu oynar.` : `Dinlenme ${r} sn, 1. turun sonunda; dinlenirken sıradaki hareketin animasyonu oynar.`;
@@ -420,7 +452,7 @@ $("ayar").querySelectorAll("button[data-k]").forEach(b=>b.onclick=()=>{ if(playi
   a[k]=Math.min(lim[1],Math.max(lim[0],a[k]+ +b.dataset.d)); try{ localStorage.setItem("gobek-ayar",JSON.stringify(a)); }catch(e){} updDoses(); });
 $("ayAuto").onclick=()=>{ try{ localStorage.removeItem("gobek-ayar"); }catch(e){} updDoses(); };
 $("ayOk").onclick=()=>{ $("ayar").hidden=true; };
-function updDoses(){ const d=DAYS[day]; $("rounds").textContent=roundsText(d); $("flowNote").textContent=flowText(d); if(!playing) $("list").querySelectorAll("li").forEach((li,i)=>{ const sp=li.querySelector("span"); if(sp) sp.textContent=exTxt(d.ex[i]); }); ayarUI(); $("kegelDose").textContent = "Kegel: "+kegelDoseText(); $("wallDose").textContent = "Duvar: "+wallDoseText(); }
+function updDoses(){ const d=DAYS[day]; $("rounds").textContent=roundsText(d); $("flowNote").textContent=flowText(d); if(!playing) $("list").querySelectorAll("li").forEach((li,i)=>{ const sp=li.querySelector("span"); if(sp&&d.ex[i]) sp.textContent=exTxt(d.ex[i]); }); ayarUI(); $("kegelDose").textContent = "Kegel: "+kegelDoseText(); $("wallDose").textContent = "Duvar: "+wallDoseText(); }
 function renderPrep(){
   const k=dstr(new Date()), done=!!(hist[k]&&hist[k].prep), b=$("prepBtn");
   b.classList.toggle("on",done);
@@ -441,6 +473,9 @@ function render(){
   const d = DAYS[day];
   endWall(false); if(kegelIdx>=0) endKegel(); if(!playing){ $("timer").classList.remove("on"); $("ov").hidden=true; $("finishBtn").hidden=true; $("lastBadge").hidden=true; }
   $("prepCard").hidden = d.k!=="cumartesi"; if(d.k==="cumartesi") renderPrep();
+  document.body.classList.toggle("burn",!!d.burn); if(d.burn){ $("ayar").hidden=true; renderBurnLog(); }
+  $("kgVal").textContent=kgOf()+" kg";
+  $("burnBtn").innerHTML = d.burn ? `<span class="bi">←</span><span>Bugünün antrenmanına dön<small>${DAYS[todayIdx()].name}: ${DAYS[todayIdx()].sub}</small></span>` : `<span class="bi">🔥</span><span>Büyük Yakım · 700–800 kcal<small>Ayrı, tek seanslık kalori yakım antrenmanı · ~${(()=>{ const B=DAYS.find(x=>x.burn), q=burnSec(B,burnTours(B)); return Math.round((q.w+q.o)/60); })()} dk</small></span>`;
   $("title").textContent = d.name; $("subtitle").textContent = d.sub; updDoses();
   showAnim(akey(d,0)); preload(d); $("extra").textContent = d.extra;
   $("list").innerHTML = d.ex.map((e,i)=>`<li class="ex" data-i="${i}"><div class="n">${i+1}</div><div class="t"><b>${e[0]}</b><span>${exTxt(e)}</span></div></li>`).join("");
@@ -480,6 +515,7 @@ function step(dir){
   let newTour=false;
   if(cur>=d.ex.length){
     if(tour<nT){ tour++; cur=0; newTour=true; $("list").querySelectorAll("li").forEach(l=>l.classList.remove("done")); }
+    else if(d.burn){ cur=d.ex.length-1; clearInterval(tick); resting=false; clearProgress(); const L=burnLog(), kc=Math.round(burnKcal); L.push({date:wD(), kcal:kc, min:Math.round((Date.now()-t0)/60000)}); store.set("gobek-yakim",JSON.stringify(L)); renderBurnLog(); finishFlow(`🔥 Büyük Yakım tamam! Tahmini ~${kc} kcal yaktın. Su iç, 5 dk yavaş yürüyüp esne. (100 güne sayılmaz.)`); $("ovKcal").hidden=true; return true; }
     else { cur=d.ex.length-1; clearInterval(tick); resting=false; $("finishBtn").hidden=true; $("lastBadge").hidden=true; saveDone(); clearProgress(); playing=false; markCur(); playing=true; startWall(true); return true; }
   }
   if(cur<0){ cur=0; }
@@ -492,13 +528,14 @@ function step(dir){
   }
 }
 function startPrep(sec){ const d=DAYS[day]; ivPhase="prep"; ivLeft=sec; $("phase").textContent=`HAZIRLAN · sıradaki: ${d.ex[cur][0]} · pozisyonunu al`; setClock(fmt(ivLeft),"HAZIRLAN",true); }
-function workText(){ const d=DAYS[day], e=d.ex[cur]; $("phase").textContent=`ÇALIŞ · ${e[0]} · hedef: ${cueOf(e)}`+(/taraf/.test(e[1])?" (yarısında taraf değiştir)":"")+(/\btut\b|sn \/ taraf/.test(e[1])?" · zorlanırsan kısa bırak, tekrar tut":""); }
+function workText(){ const d=DAYS[day], e=d.ex[cur]; $("phase").textContent=`ÇALIŞ · ${e[0]} · hedef: ${cueOf(e)}`+(d.burn&&tour===1?" · 1. tur: ısınma temposu":"")+(d.burn&&tour>=toursFor(d)&&toursFor(d)>1?" · son tur: yavaşlayarak soğu":"")+(/taraf/.test(e[1])?" (yarısında taraf değiştir)":"")+(/\btut\b|sn \/ taraf/.test(e[1])?" · zorlanırsan kısa bırak, tekrar tut":""); }
 function setClock(t,label,rest){ $("ovClock").textContent=t; $("ovPhase").textContent=label; $("ov").classList.toggle("rest",!!rest); }
 function startTimer(resume){
   const d=DAYS[day];
   wDate = (resume&&resume.date) || dstr(new Date());
-  if(resume){ cur=resume.cur; tour=resume.tour; times=resume.times||{}; }
-  else { cur=0; tour=1; times={}; }
+  if(resume){ cur=resume.cur; tour=resume.tour; times=resume.times||{}; burnKcal=resume.kcal||0; }
+  else { cur=0; tour=1; times={}; burnKcal=0; }
+  $("ovKcal").hidden=!d.burn; if(d.burn) $("ovKcal").textContent=`🔥 ${Math.round(burnKcal)} kcal`;
   t0=Date.now(); exSec=0; resting=false; showTimes(); $("list").querySelectorAll("li").forEach((l,i)=>l.classList.toggle("done", i<cur));
   $("timer").classList.add("on"); $("timer").classList.remove("over");
   workText(); if(resume) $("phase").textContent="Kaldığın yerden devam! "+$("phase").textContent;
@@ -506,6 +543,7 @@ function startTimer(resume){
   $("ov").hidden=false; $("finishBtn").hidden=false; $("finishBtn").textContent="⏭ Geç";
   clearInterval(tick);
   tick = setInterval(()=>{
+    if(d.burn){ burnKcal += (ivPhase==="work"?BURN.met:BURN.metRest)*kgOf()/3600; $("ovKcal").textContent=`🔥 ${Math.round(burnKcal)} kcal`; if(ivLeft%10===0 && ivPhase!=="rest") saveProgress(); }
     if(ivOf(d)){
       if(ivPhase==="work") exSec++;
       ivLeft--;
@@ -532,7 +570,7 @@ function startTimer(resume){
 }
 // Yarım kalan antrenman (sayfa yenilenirse kaldığı yerden devam)
 const PKEY="gobek-devam";
-function saveProgress(c=cur,t=tour){ try{ localStorage.setItem(PKEY, JSON.stringify({date:wD(), k:DAYS[day].k, cur:c, tour:t, times})); }catch(e){} }
+function saveProgress(c=cur,t=tour){ try{ localStorage.setItem(PKEY, JSON.stringify({date:wD(), k:DAYS[day].k, cur:c, tour:t, times, kcal:burnKcal})); }catch(e){} }
 function clearProgress(){ try{ localStorage.removeItem(PKEY); }catch(e){} }
 function getProgress(){ try{ const v=JSON.parse(localStorage.getItem(PKEY)||"null"); if(v && v.date===dstr(new Date()) && v.k===DAYS[day].k && (v.cur>0||v.tour>1)) return v; }catch(e){} return null; }
 function showResumeHint(){ const v=getProgress(); if(v && !playing) $("now").textContent=`Yarım kalan antrenman var: Başlat'a basınca ${v.tour}. tur ${v.cur+1}. hareketten devam eder. Baştan başlamak için Baştan al.`; }
@@ -555,8 +593,8 @@ function stopAll(){
   $("timer").classList.remove("on"); $("ov").hidden=true; $("finishBtn").hidden=true; animKey=null; showAnim(akey(DAYS[day],0)); $("now").textContent="Antrenman durduruldu."; markCur(); showResumeHint();
   keepAwakeOff();
 }
-function setStartIdle(){ const b=$("startBtn"), sun=realDayIdx()<0 && !playing; b.disabled=sun; b.textContent = playing ? "■ Durdur" : (sun ? "🌿 Bugün dinlenme günü" : "▶ Antrenmanı başlat"); }
-$("startBtn").onclick = ()=>{ unlockAudio(); if(playing) stopAll(); else if(realDayIdx()>=0) startAll(); };
+function setStartIdle(){ const b=$("startBtn"), sun=realDayIdx()<0 && !playing && !isBurn(); b.disabled=sun; b.textContent = playing ? "■ Durdur" : (sun ? "🌿 Bugün dinlenme günü" : (isBurn()?"▶ Büyük Yakım'ı başlat":"▶ Antrenmanı başlat")); }
+$("startBtn").onclick = ()=>{ unlockAudio(); if(playing) stopAll(); else if(realDayIdx()>=0 || isBurn()) startAll(); };
 document.addEventListener("touchend",unlockAudio,{passive:true});
 document.addEventListener("click",unlockAudio);
 $("nextBtn").onclick = ()=>{ const d=DAYS[day]; if(playing && !wallOn && kegelIdx<0 && ivPhase==="prep"){ ivPhase="work"; ivLeft=ivOf(d)[0]; workText(); setClock(fmt(ivLeft),"ÇALIŞ",false); return; } if(step(1)) return; ivPhase="work";ivLeft=ivOf(d)[0];workText();setClock(fmt(ivLeft),"ÇALIŞ",false); };
@@ -764,7 +802,7 @@ $("reset100").onclick = ()=>{
 };
 function resetAll(){
   if(playing) stopAll();
-  times={}; exSec=0; cur=0; tour=1; resting=false; clearProgress();
+  times={}; exSec=0; cur=0; tour=1; resting=false; burnKcal=0; clearProgress();
   $("list").querySelectorAll("li").forEach(l=>l.classList.remove("done","cur")); showTimes();
   animKey=null; showAnim(akey(DAYS[day],0)); setClock("00:00","SÜRE",false);
   $("now").textContent="Bugünkü antrenman baştan alındı. Takvim ve 100 gün korunuyor.";
@@ -852,6 +890,9 @@ function pickToday(){
   $("sunCard").hidden = realDayIdx()>=0; setStartIdle();
 }
 function busy(){ return playing || wallOn || kegelIdx>=0; }
+$("burnBtn").onclick=()=>{ if(busy()) return; const b=DAYS.findIndex(x=>x.burn); day = isBurn() ? todayIdx() : b; $("sunCard").hidden = isBurn() || realDayIdx()>=0; setStartIdle(); animKey=null; render(); updDoses(); window.scrollTo({top:0,behavior:"smooth"}); };
+function kgStep(dlt){ if(playing) return; store.set("gobek-kilo", String(Math.min(250,Math.max(40,kgOf()+dlt)))); $("kgVal").textContent=kgOf()+" kg"; render(); updDoses(); }
+$("kgMinus").onclick=()=>kgStep(-1); $("kgPlus").onclick=()=>kgStep(1);
 let hiddenAt=0;
 document.addEventListener("visibilitychange",()=>{
   if(document.hidden){ hiddenAt=Date.now(); return; }
