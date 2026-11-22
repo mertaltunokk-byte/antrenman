@@ -371,20 +371,25 @@ const DAYS = [
   extra:"+ 30–45 dk rahat yürüyüş. Sandalyeyi duvara daya ki kaymasın."},
  // Bağımsız seans: 100 güne, takvime ve seviyeye dokunmaz. Tur sayısı kiloya göre ~720+ kcal hedefiyle hesaplanır.
  {k:"yakim",tab:"🔥",name:"🔥 Büyük Yakım",sub:"Tek seansta 700–800 kcal · zıplamasız, ekipmansız",burn:true,
-  ex:[["Yerinde diz çekerek yürüyüş","süre boyunca · dizleri yükselt, kolları salla","carsamba_0"],["Tempolu sandalye squat","süre boyunca · sandalyeye değ, hemen kalk","carsamba_3"],["Gölge boks","süre boyunca · hızlı yumruk, dizler hafif bükülü","carsamba_1"],["Duvar şınavı","süre boyunca · göğüs duvara, karın sıkı","sali_1"],["Ayakta çapraz diz-dirsek","süre boyunca · dirsek karşı dize","carsamba_2"],["🪑 Eğimli mountain climber","süre boyunca · konuşabileceğin en hızlı tempo","ch_climber"],["🪑 Çapraz mountain climber","süre boyunca · diz karşı dirseğe, kontrollü","ch_cross"]],
-  extra:"Haftada en fazla 2 kez, art arda iki gün değil (Cumartesi ya da Pazar uygun). 1. tur ısınma temposunda, son tur yavaşlayarak soğuma. Su şişeni yanına al. Ayak bileğinde ağrı 10 üzerinden 3'ü geçerse o hareketi yürüyüşle değiştir. Göğüs ağrısı, baş dönmesi ya da aşırı nefes darlığında dur."}
+  ex:[["Yerinde diz çekerek yürüyüş","süre boyunca · dizleri yükselt, kolları salla","carsamba_0"],["Tempolu sandalye squat","süre boyunca · sandalyeye değ, hemen kalk","carsamba_3"],["Gölge boks","süre boyunca · hızlı yumruk, dizler hafif bükülü","carsamba_1"],["Duvar şınavı","süre boyunca · göğüs duvara, karın sıkı","sali_1"],["Ayakta çapraz diz-dirsek","süre boyunca · dirsek karşı dize","carsamba_2"],["🪑 Eğimli mountain climber","süre boyunca · konuşabileceğin en hızlı tempo","ch_climber"],["🪑 Yüksek diz + kalça kaldırma","süre boyunca · tepede 1 sn, kalçayı sık","ch_highknee"],["🪑 Çapraz mountain climber","süre boyunca · diz karşı dirseğe, kontrollü","ch_cross"],["🪑 Sandalyede oturarak diz çekiş","süre boyunca · karın sıkı, nefesini topla","ch_seated"]],
+  extra:"Tempo: konuşabildiğin ama şarkı söyleyemediğin hız (zorluk 10 üzerinden 6–7). Daha yavaş gidersen yakılan kalori tahminin altında kalır. Haftada en fazla 2 kez, art arda iki gün değil (Cumartesi ya da Pazar uygun). Yemekten en az 2 saat sonra yap. 1. tur ısınma temposunda, son tur yavaşlayarak soğuma. Her tur sonunda 1 dk su molası var. Su şişeni yanına al. Ayak bileğinde ağrı 10 üzerinden 3'ü geçerse o hareketi yürüyüşle değiştir. Göğüs ağrısı, baş dönmesi ya da aşırı nefes darlığında dur."}
 ];
 // ---------- Büyük Yakım: kalori tahmini ----------
 // kcal = MET × kg × saat (Herrmann ve ark., 2024, Adult Compendium). Çalışma 6 MET (tempolu vücut ağırlığı devresi: Compendium'da orta 3,8, yoğun 8,0), dinlenme/hazırlan 2 MET.
-const BURN={w:60,r:30,met:6,metRest:2,target:720,max:1000};
+const BURN={w:60,r:30,rt:60,met:6,metRest:2,target:720,max:1000};
 const isBurn=()=>!!(DAYS[day]&&DAYS[day].burn);
 function kgOf(){ const v=+(store.get("gobek-kilo")||0); return v>=40&&v<=250 ? v : 106; }
-function burnSec(d,n){ let w=0,o=5; for(let t=1;t<=n;t++) d.ex.forEach((_,i)=>{ const endT=i===d.ex.length-1, r=(endT&&t>=n)?0:((endT||(t>=3&&i%2===1))?BURN.r:0); w+=BURN.w; o+=r; if(!r&&i<d.ex.length-1) o+=prepSec(d,i,i+1); }); return {w,o}; }
+function burnSec(d,n){ let w=0,o=5; for(let t=1;t<=n;t++) d.ex.forEach((_,i)=>{ const endT=i===d.ex.length-1, r=(endT&&t>=n)?0:(endT?BURN.rt:((t>=3&&i%2===1)?BURN.r:0)); w+=BURN.w; o+=r; if(!r&&i<d.ex.length-1) o+=prepSec(d,i,i+1); }); return {w,o}; }
 function burnKcalOf(d,n){ const s=burnSec(d,n), kg=kgOf(); return (BURN.met*s.w+BURN.metRest*s.o)*kg/3600; }
+// Net = toplam − o sürede hiçbir şey yapmasan da harcayacağın (1 MET)
+function burnNetOf(d,n){ const s=burnSec(d,n); return burnKcalOf(d,n)-(s.w+s.o)*kgOf()/3600; }
+const dayDiff=(a,b)=>Math.round((pd(b)-pd(a))/864e5);
 function burnTours(d){ for(let n=4;n<=16;n++){ if(burnKcalOf(d,n)>=BURN.target) return burnKcalOf(d,n)>BURN.max?n-1:n; } return 16; }
 let burnKcal=0;
 function burnLog(){ try{ return JSON.parse(localStorage.getItem("gobek-yakim")||"[]")||[]; }catch(e){ return []; } }
-function renderBurnLog(){ const L=burnLog(), tot=L.reduce((a,x)=>a+(x.kcal||0),0); $("burnLog").textContent = L.length ? `🔥 Şimdiye kadar ${L.length} seans · toplam ~${Math.round(tot)} kcal · son: ${L[L.length-1].date.split("-").reverse().join(".")}` : "🔥 Henüz Büyük Yakım seansı yok."; }
+function renderBurnLog(){ const L=burnLog(), tot=L.reduce((a,x)=>a+(x.kcal||0),0); $("burnLog").textContent = L.length ? `🔥 Şimdiye kadar ${L.length} seans · toplam ~${Math.round(tot)} kcal · son: ${L[L.length-1].date.split("-").reverse().join(".")}` : "🔥 Henüz Büyük Yakım seansı yok.";
+  if(L.length){ const t=dstr(new Date()), gap=dayDiff(L[L.length-1].date,t), wk=L.filter(x=>{ const g=dayDiff(x.date,t); return g>=0&&g<7; }).length;
+    if(gap===0) $("burnLog").textContent+=" · Bugün yaptın, bugünlük yeter. 💪"; else if(gap===1) $("burnLog").textContent+=" · Dün yaptın: bugün dinlen, yarın yap."; else if(wk>=2) $("burnLog").textContent+=" · Son 7 günde 2 seans tamam, bu haftalık yeter."; } }
 
 const $ = id => document.getElementById(id);
 const store = {get(k){try{return localStorage.getItem(k)}catch(e){return null}}, set(k,v){try{localStorage.setItem(k,v)}catch(e){}}};
@@ -415,14 +420,15 @@ function restOf(){ if(isBurn()) return BURN.r; const a=ayar(); if(a) return a.r;
 function ivOf(d){ return [workOf(), restOf()]; }
 function posture(e){ const n=e[0]; if(n.includes("🪑")) return "sandalye"; if(/otur-kalk|Duvar şınavı|Yerinde|Gölge boks|Ayakta|sandalye squat/i.test(n)) return "ayakta"; return "yer"; }
 function prepSec(d,from,to){ to=to%d.ex.length; return posture(d.ex[from])===posture(d.ex[to]) ? 5 : 10; }
-function restAfter(d,i,t){ const endT=i===d.ex.length-1; if(endT && t>=toursFor(d)) return 0; return (endT || (t>=3 && i%2===1)) ? restOf() : 0; }
+function restAfter(d,i,t){ const endT=i===d.ex.length-1; if(endT && t>=toursFor(d)) return 0; return endT ? (d.burn?BURN.rt:restOf()) : ((t>=3 && i%2===1) ? restOf() : 0); }
 function workoutMin(d){ const n=toursFor(d), w=workOf(); let sec=0; for(let t=1;t<=n;t++) d.ex.forEach((_,i)=>{ const r=restAfter(d,i,t); sec+=w+r; if(!r && i<d.ex.length-1) sec+=prepSec(d,i,i+1); }); sec+=5; return Math.round(sec/60*2)/2; }
 // Ekrandaki tüm açıklamalar etkin ayardan (otomatik plan / Kolay·Normal·Zor·Hayvansı / kendi ayarın) üretilir
 function planLabel(){ const a=ayar(); if(!a) return `Otomatik plan · ${kegelPlan().wk}. hafta`; const cp=presetOf(a); return cp ? cp.n : "Kendi ayarın"; }
 function roundsText(d){ const n=toursFor(d), w=workOf(), r=restOf();
-  if(d.burn) return `${n} tur × ${d.ex.length} hareket · ${w} sn çalış · ${r} sn dinlen · yaklaşık ${String(workoutMin(d)).replace(".",",")} dk · tahmini ~${Math.round(burnKcalOf(d,n))} kcal (${kgOf()} kg için). Kilon düştükçe tur sayısı kendiliğinden artar ki hedef 700+ kcal kalsın.`;
+  if(d.burn) return `${n} tur × ${d.ex.length} hareket · ${w} sn çalış · ${r} sn dinlen · tur sonunda 1 dk su molası · yaklaşık ${String(workoutMin(d)).replace(".",",")} dk · tahmini toplam ~${Math.round(burnKcalOf(d,n))} kcal (${kgOf()} kg için; dinlenirken de harcayacağın kısım çıkınca net ~${Math.round(burnNetOf(d,n))} kcal). Kilon düştükçe tur sayısı kendiliğinden artar ki hedef 700+ kcal kalsın.`;
   return `${planLabel()} · ${n} tur × ${d.ex.length} hareket · ${w} sn çalış · `+(r && n>1 ? `${r} sn dinlen` : "dinlenmesiz")+` · yaklaşık ${String(workoutMin(d)).replace(".",",")} dk`+(ayar()?"":" · dinlenme haftaya göre kısalır: 1–2. hafta 30, 3–4. hafta 20, 5. haftadan itibaren 15 sn"); }
 function flowText(d){ const n=toursFor(d), w=workOf(), r=restOf();
+  if(d.burn) return `Süreli akış: her hareket ${w} sn, süre dolunca bip çalar ve kendiliğinden sıradakine geçer. Hareketler arasında 5–10 sn "Hazırlan" var. Her tur sonunda 1 dk su molası; 3. turdan itibaren her 2 hareketten sonra ${r} sn dinlenme. Yarıda bırakırsan Durdur'a bas: aynı gün Başlat'a basınca kaldığın yerden ve kalori sayacıyla devam eder. Kalori tahmini: MET × kilo × süre (çalışma 6 MET, dinlenme 2 MET; Herrmann ve ark., 2024). Gerçek değer tempona göre ±%15–20 oynar.`;
   const rest = !r || n<2 ? "Bu ayarda dinlenme yok." : n>=3 ? `Dinlenme ${r} sn: 1. ve 2. turda sadece tur sonunda, 3. turdan itibaren her 2 hareketten sonra da. Son turdan sonra dinlenme yok. Dinlenirken sıradaki hareketin animasyonu oynar.` : `Dinlenme ${r} sn, 1. turun sonunda; dinlenirken sıradaki hareketin animasyonu oynar.`;
   return `Süreli akış: her hareket ${w} sn. Süre dolunca bip çalar ve kendiliğinden sıradakine geçer. Hareketler arasında pozisyon almak için 5 sn "Hazırlan" var; yer, ayakta ve sandalye arasında geçerken 10 sn. ${rest} Tutma hareketlerinde (plank gibi) zorlanırsan birkaç saniye bırakıp tekrar tut.`; }
 // Hareket yazısı: sabit tekrar sayısı yerine süre + nasıl yapılacağı
@@ -515,7 +521,7 @@ function step(dir){
   let newTour=false;
   if(cur>=d.ex.length){
     if(tour<nT){ tour++; cur=0; newTour=true; $("list").querySelectorAll("li").forEach(l=>l.classList.remove("done")); }
-    else if(d.burn){ cur=d.ex.length-1; clearInterval(tick); resting=false; clearProgress(); const L=burnLog(), kc=Math.round(burnKcal); L.push({date:wD(), kcal:kc, min:Math.round((Date.now()-t0)/60000)}); store.set("gobek-yakim",JSON.stringify(L)); renderBurnLog(); finishFlow(`🔥 Büyük Yakım tamam! Tahmini ~${kc} kcal yaktın. Su iç, 5 dk yavaş yürüyüp esne. (100 güne sayılmaz.)`); $("ovKcal").hidden=true; return true; }
+    else if(d.burn){ cur=d.ex.length-1; clearInterval(tick); resting=false; clearProgress(); const L=burnLog(), kc=Math.round(burnKcal); L.push({date:wD(), kcal:kc, min:Math.round((Date.now()-t0)/60000)}); store.set("gobek-yakim",JSON.stringify(L)); renderBurnLog(); renderCal(); finishFlow(`🔥 Büyük Yakım tamam! Tahmini ~${kc} kcal yaktın. Su iç, 5 dk yavaş yürüyüp esne. (100 güne sayılmaz.)`); $("ovKcal").hidden=true; return true; }
     else { cur=d.ex.length-1; clearInterval(tick); resting=false; $("finishBtn").hidden=true; $("lastBadge").hidden=true; saveDone(); clearProgress(); playing=false; markCur(); playing=true; startWall(true); return true; }
   }
   if(cur<0){ cur=0; }
@@ -553,7 +559,7 @@ function startTimer(resume){
         if(ivPhase==="prep"){ ivPhase="work"; ivLeft=ivOf(d)[0]; beep(); workText(); setClock(fmt(ivLeft),"ÇALIŞ",false); return; }
         if(ivPhase==="work" && !lastOne && !restAfter(d,cur,tour)){ const ps=prepSec(d,cur,cur+1); beep(); step(1); startPrep(ps); return; }
         if(ivPhase==="work" && !lastOne){ const endT=cur===d.ex.length-1, ni=endT?0:cur+1; ivPhase="rest"; ivLeft=restAfter(d,cur,tour);
-          $("phase").textContent=(endT?`Tur ${tour} bitti! `:"")+`DİNLEN · sıradaki: ${d.ex[ni][0]}`; showAnim(akey(d,ni)); $("lastBadge").hidden=true; saveProgress(ni, endT?tour+1:tour); beep(); }
+          $("phase").textContent=(endT?`Tur ${tour} bitti! `+(d.burn?"Su iç. ":""):"")+`DİNLEN · sıradaki: ${d.ex[ni][0]}`; showAnim(akey(d,ni)); $("lastBadge").hidden=true; saveProgress(ni, endT?tour+1:tour); beep(); }
         else { ivPhase="work"; ivLeft=ivOf(d)[0]; beep(); if(step(1)) return; workText(); }
       } else if(ivPhase==="work" && /taraf/.test(d.ex[cur][1]) && ivLeft===Math.floor(ivOf(d)[0]/2)){ beep(); $("phase").textContent="↔ Taraf değiştir! · "+d.ex[cur][0]+" · hedef: "+cueOf(d.ex[cur]);
       }
@@ -775,9 +781,9 @@ function renderCal(){
   const first=new Date(calY,calM,1), off=(first.getDay()+6)%7, days=new Date(calY,calM+1,0).getDate(), today=dstr(new Date());
   let h=["Pzt","Sal","Çar","Per","Cum","Cmt","Paz"].map(w=>`<div class="wd">${w}</div>`).join("");
   for(let i=0;i<off;i++) h+="<div></div>";
-  let cnt=0;
+  let cnt=0; const BL=burnLog(), bset=new Set(BL.map(x=>x.date));
   for(let dd=1;dd<=days;dd++){ const k=dstr(new Date(calY,calM,dd)); const done=isW(k), prep=!done&&!!(hist[k]&&hist[k].prep); if(done) cnt++;
-    h+=`<button data-k="${k}" class="${done?"done":(prep?"prep":"")} ${k===today?"today":""} ${k===calSel?"sel":""}" aria-label="${dd} ${AYLAR[calM]}${done?", tamamlandı":""}">${dd}</button>`; }
+    h+=`<button data-k="${k}" class="${done?"done":(prep?"prep":"")} ${k===today?"today":""} ${k===calSel?"sel":""}" aria-label="${dd} ${AYLAR[calM]}${done?", tamamlandı":""}${bset.has(k)?", Büyük Yakım":""}">${dd}${bset.has(k)?'<span style="font-size:10px;line-height:1">🔥</span>':""}</button>`; }
   $("calGrid").innerHTML=h;
   $("calSum").textContent = cnt ? `Bu ay ${cnt} gün işaretlendi. Ayrıntı için tarihe dokun.` : "Antrenmanını bitirdiğin günler burada ✓ ile işaretlenir.";
   $("calGrid").querySelectorAll("button").forEach(b=>b.onclick=()=>{ calSel=b.dataset.k; renderCal(); });
@@ -785,8 +791,9 @@ function renderCal(){
   if(!calSel){ box.hidden=true; return; }
   box.hidden=false;
   const [y,m,dd]=calSel.split("-");
-  box.innerHTML = r ? detailHtml(calSel)
-                    : `<b>${+dd} ${AYLAR[+m-1]}</b><br><span class="note">Bu gün tamamlanmış antrenman yok.</span>`;
+  const bs=BL.filter(x=>x.date===calSel), bh=bs.length?`<div><b>🔥 Büyük Yakım: ~${bs.reduce((a,x)=>a+(x.kcal||0),0)} kcal</b></div>`:"";
+  box.innerHTML = (r ? detailHtml(calSel)
+                    : `<b>${+dd} ${AYLAR[+m-1]}</b><br><span class="note">Bu gün tamamlanmış günlük antrenman yok.</span>`)+bh;
 }
 $("calPrev").onclick=()=>{ calM--; if(calM<0){calM=11;calY--;} renderCal(); };
 $("calNext").onclick=()=>{ calM++; if(calM>11){calM=0;calY++;} renderCal(); };
@@ -865,11 +872,13 @@ function importBackup(code){
   code=(code||"").trim().replace(/^.*?GA1:/s,"").replace(/\s+/g,"");
   const data=JSON.parse(b64d(code)); let n=0;
   if(data&&/^\d{4}-\d{2}-\d{2}$/.test(data._bas||"") && data._bas>base100()) store.set(B100, data._bas);
+  if(data&&Array.isArray(data._yakim)){ const L=burnLog(); data._yakim.forEach(x=>{ if(x&&/^\d{4}-\d{2}-\d{2}$/.test(x.date||"")&&!L.some(y=>y.date===x.date&&y.kcal===x.kcal)){ L.push({date:x.date,kcal:+x.kcal||0,min:+x.min||0}); n++; } }); L.sort((a,b)=>a.date<b.date?-1:1); store.set("gobek-yakim",JSON.stringify(L)); }
+  if(data&&+data._kilo>=40&&+data._kilo<=250&&!store.get("gobek-kilo")) store.set("gobek-kilo",String(+data._kilo));
   for(const [k,v] of Object.entries(data||{})){ if(!/^\d{4}-\d{2}-\d{2}$/.test(k)||!v||typeof v!=="object") continue;
     const cur=hist[k]; hist[k]= cur ? {...v, ...cur, prep:!!(cur.prep||v.prep), kegel:!!(cur.kegel||v.kegel), wall:Math.max(cur.wall||0,v.wall||0)||undefined, sets:(cur.sets&&cur.sets.length)?cur.sets:(v.sets||[])} : v; n++; }
   saveLocal(); renderCal(); updDoses(); return n;
 }
-$("bkCopy").onclick=async()=>{ const code="GA1:"+b64e(JSON.stringify(base100()?{...hist,_bas:base100()}:hist)); $("bkText").value=code;
+$("bkCopy").onclick=async()=>{ const code="GA1:"+b64e(JSON.stringify({...hist, ...(base100()?{_bas:base100()}:{}), ...(burnLog().length?{_yakim:burnLog()}:{}), ...(store.get("gobek-kilo")?{_kilo:kgOf()}:{})})); $("bkText").value=code;
   try{ await navigator.clipboard.writeText(code); $("bkMsg").textContent="Kod kopyalandı ✓ ("+Object.keys(hist).length+" gün)"; }
   catch(e){ $("bkText").select(); $("bkMsg").textContent="Kodu seçip elle kopyala."; } };
 $("bkLoad").onclick=()=>{ try{ const n=importBackup($("bkText").value); $("bkMsg").textContent=n?`✓ ${n} günlük kayıt yüklendi.`:"Kodda kayıt bulunamadı."; if(n) $("bkText").value=""; }catch(e){ $("bkMsg").textContent="Kod okunamadı. Tamamını kopyaladığından emin ol."; } };
